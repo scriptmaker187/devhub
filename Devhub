@@ -1140,7 +1140,7 @@ Toggle = Section:CreateToggle('Grab Lightning (Need Fireball) on Spawn', false, 
                 task.wait()
                 repeat
                 wait(.3)
-                game:GetService('VirtualInputManager'):SendKeyEvent(true, "E", false, game)
+                game:GetService('VirtualInputManager'):SendKeyEvent(true, "L", false, game)
                 until game.Players.LocalPlayer.Character:FindFirstChild("Lightningball") or game.Players.LocalPlayer.Backpack:FindFirstChild("Lightningball") or a
 
                 wait()
@@ -2082,19 +2082,29 @@ end)
 
 
 -- [[ UI Section Settings ]]
-
+-- Erstellen der Hauptregisterkarte 'UI Settings'
 TabSettings = Window:CreateTab('UI Settings', false, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
+
+-- Erstellen eines Abschnitts unter 'UI Settings' namens 'UI Settings'
 UIFunctions = TabSettings:CreateSection('UI Settings')
 
+-- Erstellen einer Schaltfläche im Abschnitt 'UI Settings' mit dem Text 'Destroy UI'
 DestroyButton = UIFunctions:CreateButton('Destroy UI', function()
-    Library:DestroyUI()
+    -- Funktion, die aufgerufen wird, wenn die Schaltfläche gedrückt wird
+    Library:DestroyUI()  -- Annahme: 'Library' ist ein Objekt, das die Methode 'DestroyUI' bereitstellt
 end)
 
+-- Erstellen einer Tastenkombination im Abschnitt 'UI Settings' mit dem Text 'Toggle UI' und der Taste 'L'
 ToggleKeybind = UIFunctions:CreateKeybind('Toggle UI', 'L', function()
-    print("Pressed")
-    local UIName = 'DEVHub'
-    local CoreGui = game.Players.LocalPlayer.PlayerGui.CoreGui
+    -- Funktion, die aufgerufen wird, wenn die Tastenkombination gedrückt wird
+    print("Pressed")  -- Ausgabe einer Nachricht in die Konsole
+
+    local UIName = 'DevHub'  -- Name der Benutzeroberfläche, die ein- oder ausgeschaltet wird
+    local CoreGui = game.Players.LocalPlayer.PlayerGui.CoreGui  -- Zugriff auf die CoreGui des lokalen Spielers
+
+    -- Prüfen, ob die Benutzeroberfläche 'DevHub' bereits vorhanden ist
     if CoreGui:FindFirstChild(UIName) ~= nil then
+        -- Wenn die Benutzeroberfläche vorhanden ist, den 'Enabled'-Status umkehren
         CoreGui:FindFirstChild(UIName).Enabled = not CoreGui:FindFirstChild(UIName).Enabled
     end
 end)
