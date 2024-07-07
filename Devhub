@@ -2082,6 +2082,17 @@ end)
 
 
 -- [[ UI Section Settings ]]
+
+local UIName = 'DEVHub'
+local CoreGui = game.Players.LocalPlayer.PlayerGui.CoreGui
+
+-- Prüfen Sie die gesamte CoreGui-Hierarchie nach 'DEVHub'
+local devHubUI = CoreGui:FindFirstChild(UIName, true)  -- true, um rekursiv zu suchen
+
+if devHubUI then
+    devHubUI.Enabled = not devHubUI.Enabled
+end
+
 -- Erstellen der Hauptregisterkarte 'UI Settings'
 TabSettings = Window:CreateTab('UI Settings', false, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
 
