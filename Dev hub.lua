@@ -1,4 +1,4 @@
-script_key = "KEY_HERE" -- script: oni hub.lua
+script_key = "KEY_HERE" -- script: Dev hub.lua
 --[[
 
     This script is protected
