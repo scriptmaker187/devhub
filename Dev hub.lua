@@ -1,12 +1,2290 @@
+---WAITS UNTIL CHARACTER AND GAME IS FULLY LOADED
+
+repeat wait() until game:IsLoaded()
+
+
+local time = os.clock()
+COREGUI = game:GetService("CoreGui")
+if not game:IsLoaded() then
+	game.Loaded:Wait()
+end
+
+if game.PlaceId ~= 5712833750 then
+    return
+end
+
+local breakit = false
+while true do
+    local success, error = pcall(function()
+        print(game.Players.LocalPlayer:FindFirstChild("leaderstats"))
+        task.wait()
+        if game.Players.LocalPlayer:FindFirstChild("leaderstats") then
+            breakit = true
+        end
+    end)
+
+    if error then
+        print(success, error)
+    end
+
+    if breakit then
+        break
+    end
+end
+
+Player = game.Players.LocalPlayer
+Character = Player.Character or Player.CharacterAdded:Wait()
+
+
+--[username] = 'webhook'
+local Webhook = { -- For Grinding, tells you your leveling speed.
+    ["XelXel"] = 'https://discord.com/api/webhooks/1852735481765/3IhmtR2PqI5zaoUGpzrfbfFDu2P0x0pbIs1KY5Zx_ZChzNoQ8LH', -- Example Webhook, doesn't work.
+}
+
+if Webhook[game.Players.LocalPlayer.Name] then
+    getgenv().LocalWebhookId = Webhook[game.Players.LocalPlayer.Name]
+end
+
+Access = true
+VIP = true
+
+
+
+---SYSTEM TO SEE WHEN A PLAYER IS DEAD OR ALIVE [[START]]
+function RemoveGUI()
+    local success, error = pcall(function()
+        if game.Players.LocalPlayer.PlayerGui:FindFirstChild("newRewardGui") then
+            game.Players.LocalPlayer.PlayerGui.newRewardGui:Destroy()
+            breakit = true
+        end
+    end)
+end
+
+function RemoveAddedCooldown()
+    Character.ChildAdded:connect(function(child)
+        if child.Name == "justFound" or child.Name == "Deb" or child.Name == "FireballDeb" then
+            wait()
+            child:Destroy()
+        else
+            print(child.Name, "Added")
+        end
+    end)
+end
+
+
+teleport = false
+local CharacterAlive
+if Character:FindFirstChild("Humanoid").Health > 0 then
+    CharacterAlive = true
+    teleport = true
+
+    RemoveAddedCooldown()
+    RemoveGUI()
+
+    Character:WaitForChild("Humanoid").Died:Connect(function()
+        CharacterAlive = false
+    end)
+else
+    CharacterAlive = false
+end
+
+game.Players.LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    Character = newCharacter
+    Character:WaitForChild("Humanoid")
+    CharacterAlive = true
+    teleport = true
+
+    RemoveAddedCooldown()
+    RemoveGUI()
+
+    Character:WaitForChild("Humanoid").Died:Connect(function()
+        print("Character Dead")
+        CharacterAlive = false
+    end)
+end)
+
+---SYSTEM TO SEE WHEN A PLAYER IS DEAD OR ALIVE [[END]]
+
+-- [[ Comma Function ]]
+function commaValue(amount)
+    local formatted = amount
+    while true do
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if (k==0) then
+            break
+        end
+    end
+    return formatted
+end
+
+
+-- [[ Webhook Setup ]]
+local BotUserName = 'ONIxAPI'
+local BotPhotoURL = 'https://media.discordapp.net/attachments/856034478408728576/1009394204193067058/oniii.jpg'
+local Red = tonumber(tostring("0xFF0000"))
+local Green = tonumber(tostring("0x32CD32"))
+local Timestamp = os.date("%Y-%m-%dT%X.000Z")
+local Request = http_request or request or HttpPost or syn.request
+
+
+
+
+---- KEEP TRACK OF PLAYER'S PING
+local fps = 0
+local PlayerPing = 0
+game:GetService("RunService").RenderStepped:Connect(function(ping)
+    PlayerPing = (game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString(math.round(2/ping))) -- your ping
+    fps = math.round(1/ping)
+end)
+
+
+
+---- SEND PLAYER'S CURRENT LEVELING DAYA TO THE WEBHOOK
+
+local fireballsTotal = 0
+
+---FOR
+local levelaverage = 0
+local TotalExpPerMin = 0
+local LostExpPerMin = 0
+local xseconds = 0
+local xmins = 0
+
+if getgenv().LocalWebhookId ~= 'YOUR DISCORD WEBHOOK HERE' then
+    local TrackingWebhookSeconds = 0
+    local TrackingWebhookMinutes = 0
+    local TrackedTime = 0
+    local TrackedPlayerLevel = game.Players.LocalPlayer.leaderstats.Level.Value
+    local LevelPerMin = 0
+    local HoursTilOnLeaderboard = 0
+    local leveldiff = 0
+
+    local testSeconds = 0
+    local testMins = 0
+    local testHours = 0
+
+    local function TotalExp(exp)
+        return 500*(exp-1)^2+1500*(exp-1)+1000
+    end
+
+
+    local top100level = 135000
+    for i,v in pairs(game:GetService("Workspace").LBFolder.GlobalLeaderboard.LeaderboardGUI.Holder.ScrollingFrame:GetChildren()) do
+        if v.Name == "LeaderboardFrame" then
+            local rank = tonumber(v.Rank.text)
+            local player = v.Player.text
+            local level = tonumber(v.Level.text)
+
+            if rank == 100 then
+                top100level = level
+            end
+        end
+    end
+
+
+    local top1level = 165000
+    for i,v in pairs(game:GetService("Workspace").LBFolder.GlobalLeaderboard.LeaderboardGUI.Holder.ScrollingFrame:GetChildren()) do
+        if v.Name == "LeaderboardFrame" then
+            local rank = tonumber(v.Rank.text)
+            local player = v.Player.text
+            local level = tonumber(v.Level.text)
+
+            if rank == 1 then
+                top1level = level
+            end
+        end
+    end
+
+    task.spawn(function()
+        while true do
+
+            if testMins ~= 0 and game.Players.LocalPlayer.leaderstats.Level.Value-TrackedPlayerLevel ~= 0 then
+                LevelPerMin = (game.Players.LocalPlayer.leaderstats.Level.Value-TrackedPlayerLevel)/testMins
+            end
+
+            local expdifftomax100 = TotalExp(top100level) - TotalExp(game.Players.LocalPlayer.leaderstats.Level.Value)
+            local expdifftomax1 = TotalExp(top1level) - TotalExp(game.Players.LocalPlayer.leaderstats.Level.Value)
+            local TotalExpPerHour = TotalExpPerMin*60
+
+            HoursTilOnLeaderboard100 = expdifftomax100/TotalExpPerHour
+            HoursTilOnLeaderboard1 = expdifftomax1/TotalExpPerHour
+
+            if TrackingWebhookSeconds == 0 then
+                local msg = {
+                    ["username"] = BotUserName,
+                    ["avatar_url"] = BotPhotoURL,
+                    ["content"] = " ",
+                    ["embeds"] = {
+                        {
+                            ["title"] = "__**Farming Update**__",
+                            ["type"] = "rich",
+                            ["description"] = Player.Name,
+                            ["color"] = Green,
+                            ["fields"] = {
+                                {
+                                    ["name"] = "Current Level",
+                                    ["value"] = commaValue(game.Players.LocalPlayer.leaderstats.Level.Value),
+                                    ["inline"] = true
+                                },
+                                {
+                                    ["name"] = "Previous Level",
+                                    ["value"] = commaValue(TrackedPlayerLevel),
+                                    ["inline"] = true
+                                },
+                                {
+                                    ["name"] = "​",
+                                    ["value"] = "Data:",
+                                },
+                                {
+                                    ["name"] = "Levels Gained",
+                                    ["value"] = commaValue(game.Players.LocalPlayer.leaderstats.Level.Value-TrackedPlayerLevel),
+                                    ["inline"] = true
+                                },
+                                {
+                                    ["name"] = "Levels Per Min",
+                                    ["value"] = tostring(math.round(LevelPerMin*100)/100),
+                                    ["inline"] = true
+                                },
+                                {
+                                    ["name"] = "Levels Per Hour",
+                                    ["value"] = tostring(math.round((LevelPerMin*60)*100)/100),
+                                    ["inline"] = true
+                                },
+                                {
+                                    ["name"] = "Exp Gained Per Min",
+                                    ["value"] = commaValue(TotalExpPerMin),
+                                    ["inline"] = false
+                                },
+                                {
+                                    ["name"] = "Exp till #100",
+                                    ["value"] = commaValue(expdifftomax100),
+                                    ["inline"] = false
+                                },
+                                {
+                                    ["name"] = "Hours till #100",
+                                    ["value"] = tostring(math.round(HoursTilOnLeaderboard100*100)/100),
+                                    ["inline"] = true
+                                },
+                                {
+                                    ["name"] = "Exp till #1",
+                                    ["value"] = commaValue(expdifftomax1),
+                                    ["inline"] = false
+                                },
+                                {
+                                    ["name"] = "Hours till #1",
+                                    ["value"] = tostring(math.round(HoursTilOnLeaderboard1*100)/100),
+                                    ["inline"] = true
+                                },
+                                {
+                                    ["name"] = "Fireballs",
+                                    ["value"] = fireballsTotal,
+                                    ["inline"] = true
+                                },
+                            },
+                            ['timestamp'] = Timestamp,
+                            ["footer"] = {
+                                ["text"]  = "Time Farming: ".. TrackedTime.. "\n" .. "FPS: "..fps.."\n" .. "Ping: ".. PlayerPing .. "\n" .."​"
+                            }
+                        },
+                    }
+                }
+                pcall(function()
+                    Request({Url = getgenv().LocalWebhookId, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = game.HttpService:JSONEncode(msg)})
+                end)
+                --print("Sending Request")
+
+
+                xseconds = 0
+                xmins = 0
+                TotalExpPerMin = 0
+                LostExpPerMin = 0
+                levelaverage = 0
+            end
+
+
+            testSeconds += 1
+            testMins = testSeconds / 60
+            testHours = testMins / 60
+
+            --print("SECONDS: ",TrackingWebhookSeconds)
+
+            TrackingWebhookSeconds = TrackingWebhookSeconds + 1
+            if TrackingWebhookSeconds >= 300 then
+                TrackingWebhookMinutes = (TrackingWebhookSeconds + (TrackingWebhookMinutes * 60)) / 60
+                TrackedTime = math.floor(TrackingWebhookMinutes) .. ' Minutes'
+
+                if TrackingWebhookMinutes >= 60 then
+                    TrackingWebhookHours = TrackingWebhookMinutes / 60
+                    TrackingWebhookLeftoverMinutes = (TrackingWebhookHours%1) * 60
+                    TrackingWebhookHours = math.floor(TrackingWebhookHours)
+                    TrackedTime = TrackingWebhookHours .. ' Hours ' .. math.floor(TrackingWebhookLeftoverMinutes) .. ' Minutes'
+                end
+                TrackingWebhookSeconds = 0
+            end
+            wait(1)
+        end
+    end)
+end
+
+-- [[ Anti AFK ]]
+if not game:IsLoaded() then game.Loaded:Wait(); end
+
+local idledEvent = game:GetService("Players").LocalPlayer.Idled
+local function disable()
+    for _, cn in ipairs(getconnections(idledEvent)) do
+        cn:Disable()
+    end
+end
+
+oldConnect = hookfunction(idledEvent.Connect, function(self, ...)
+    local cn = oldConnect(self, ...); disable()
+    return cn
+end)
+
+namecall = hookmetamethod(game, "__namecall", function(self, ...)
+    if self == idledEvent and getnamecallmethod() == "Connect" then
+        local cn = oldConnect(self, ...); disable()
+        return cn
+    end
+    return namecall(self, ...)
+end)
+
+disable()
+
+
+
+
+
+
+
+---- KEEPS TRACK OF ALL THE EXP GAINED FROM THE USE OF THE CHANGED SIGNAL. THIS IS USED TO PREDICT WHAT LEVEL YOU WILL BE BASED ON THE GIVEN EXP PER MIN
+
+
+local tickstart = os.clock()
+local expgained = 0
+local lostexp = 0
+local totalexp = 0
+local level = 0
+local exp = 0
+local expreset = 0
+local leveluptrack = 0
+local FireballOrHittrack = 0
+
+
+local currentexp
+local previousexp
+local previouslevel
+function Exp()
+    local ExperienceBar = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("LevelBar"):WaitForChild("Experience")
+    currentexp = tonumber(ExperienceBar.text:split("/")[1])
+    previousexp = tonumber(ExperienceBar.text:split("/")[1])
+    previouslevel = tonumber(ExperienceBar.text:split("/")[2]:sub(1, -4))
+    warn(currentexp, previousexp, previouslevel)
+
+    getgenv().ExpTracker = ExperienceBar:GetPropertyChangedSignal("Text"):Connect(function(text)
+        a, b = pcall(function()
+            if CharacterAlive == false then
+                getgenv().ExpTracker:Disconnect()
+                return
+            end
+
+            if game:GetService("Players").LocalPlayer.Character:FindFirstChild("Humanoid").Health == 0 then
+                getgenv().ExpTracker:Disconnect()
+                return
+            end
+
+            if text == "0/100" then
+                return
+            end
+
+            exp = tonumber(ExperienceBar.text:split("/")[1])
+            level = tonumber(ExperienceBar.text:split("/")[2]:sub(1, -4))
+
+
+
+            if currentexp < previousexp then
+                wait(.2)
+                print("[Current exp] " .. currentexp .." is less than [Previous Exp] "..previousexp)
+                print(level, previouslevel, CharacterAlive)
+                if level < previouslevel then
+                    print("Level Down: ".. level - previouslevel)
+                    leveldown = true
+                else
+                    leveldown = false
+                end
+
+                if level > previouslevel then
+                    levelup = true
+                else
+                    levelup = false
+                end
+
+                if level == previouslevel then
+                    expsame = true
+                else
+                    expsame = false
+                end
+
+                if levelup then
+                    leveluptrack += 1
+                    print("Level up: " .. level - previouslevel)
+                    previouslevel = level
+
+                    currentexp = tonumber(ExperienceBar.text:split("/")[1])
+                    previousexp = tonumber(ExperienceBar.text:split("/")[1])
+
+
+                end
+
+                if expsame and not levelup or leveldown then
+                    print("Exp decreased")
+                    expreset += 1
+                    lostexp += previousexp - currentexp
+                    currentexp = tonumber(ExperienceBar.text:split("/")[1])
+                    previousexp = currentexp
+                end
+            end
+
+            previousexp = currentexp
+            currentexp = tonumber(ExperienceBar.text:split("/")[1])
+            if currentexp > previousexp then
+                totalexp += currentexp - previousexp
+            end
+        end)
+        if b then
+            print(a, b)
+        end
+    end)
+end
+
+task.spawn(function()
+    getgenv().Player = game.Players.LocalPlayer.CharacterAdded:Connect(function(Character)
+        Exp()
+    end)
+    Exp()
+end)
+
+
+task.spawn(function()
+    while wait(1) do
+        xseconds += 1
+        xmins = xseconds/60
+    end
+end)
+
+
+task.spawn(function()
+    while wait(10) do
+        TotalExpPerMin = totalexp/xmins
+        LostExpPerMin = lostexp/xmins
+        levelaverage = level/xmins
+
+        --print"[-------"
+        --warn("Level: " .. level .. " Current: ".. currentexp .." Previous: " .. previousexp .. " Total Exp: " .. totalexp)
+        --warn("Gained: ".. currentexp - previousexp)
+        --warn("Lost Exp: ", lostexp)
+        --print"-------"
+        --warn("Exp Per Min: ", TotalExpPerMin)
+        --warn("Times exp was lowered: ", expreset)
+        --warn("Level Ups: ", leveluptrack)
+        --print"-------]"
+        --print(xmins)
+    end
+end)
+
+
+
+
+
+
+----END TRACKER
+
+
+
+
+
+
+
+
+
+-- [[ UI Library Setup ]]
+Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/VoixGIT/ONIHUB/main/VisualUI3.0'))()
+Window = Library:CreateWindow('DEV HUB', 'Animal Simulator', 'D E V H U B', ' ', 'VisualUIConfigs', 'Kiriot')
+
+
+wait()
+print("UI RUNNING")
+
+-- [[ UI Section Autofarm ]]
+TabAutofarm = Window:CreateTab('Auto Farm', true, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
+Section = TabAutofarm:CreateSection('Auto Farm')
+
+
+-- [[ TIMER ]]
+local timeSecondsDummy = 0
+local timeMinsDummy = timeSecondsDummy / 60
+local timeHoursDummy = timeMinsDummy / 60
+local timeDaysDummy = timeHoursDummy / 60
+task.spawn(function()
+    pcall(function()
+        while wait(1) do
+            ----print(timeSecondsDummy)
+            timeSecondsDummy += 1
+            timeMinsDummy = timeSecondsDummy / 60
+            timeHoursDummy = timeMinsDummy / 60
+            timeDaysDummy = timeHoursDummy / 60
+        end
+    end)
+end)
+
+------------
+
+local savedpos
+Toggle = Section:CreateToggle('[Dummy] (Hit)', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        NewLoop = true
+    else
+        NewLoop = false
+    end
+
+    timeSecondsDummy = 0
+    local dummytarget = nil
+    local success, error = pcall(function()
+        if NewLoop then
+            savedpos = Character.HumanoidRootPart.CFrame
+            TrackingWebhookSeconds = 0
+            timeSecondsDummy = 0
+            local search
+            local dummyLevel
+            if game.Players.LocalPlayer.leaderstats.Level.Value > 5000 then
+                dummyLevel = "Dummy2"
+                dummyName = "5k_dummies"
+                search = game:GetService("Workspace").MAP[dummyName]
+            else
+                dummyLevel = "Training Dummy"
+                search = game:GetService("Workspace").MAP.dummies
+            end
+
+            dummytarget = search:FindFirstChild(dummyLevel)
+
+            Character.HumanoidRootPart.CFrame = dummytarget.HumanoidRootPart.CFrame + Vector3.new(3,0,0)
+        else
+            Character.HumanoidRootPart.CFrame = savedpos
+        end
+
+        local FireLoop = 0
+        local Fire = 0
+        while NewLoop do
+            task.wait()
+            Fire += 1
+            if Fire >= 2 then
+                Fire = 0
+                FireLoop += 1
+                if FireLoop > 60 then
+                    FireLoop = 1
+                end
+                game:GetService("ReplicatedStorage").jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(dummytarget.Humanoid, FireLoop)
+            end
+
+            task.spawn(function()
+                if timeMinsDummy > 5 then
+                    timeSecondsDummy = 0
+                    if Character:FindFirstChild("Humanoid") then
+                        Character.Humanoid.Health = 0
+                    end
+                    repeat
+                        wait()
+                    until CharacterAlive == true
+
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = dummytarget.HumanoidRootPart.CFrame
+                end
+            end)
+        end
+    end)
+end)
+
+
+
+local savedpos
+Toggle = Section:CreateToggle('[Dummy] (Single Fireball + Hit)', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        NewLoop = true
+    else
+        NewLoop = false
+    end
+
+    timeSecondsDummy = 0
+    local dummytarget = nil
+    local success, error = pcall(function()
+        if NewLoop then
+            savedpos = Character.HumanoidRootPart.CFrame
+            TrackingWebhookSeconds = 0
+            timeSecondsDummy = 0
+            local search
+            local dummyLevel
+            if game.Players.LocalPlayer.leaderstats.Level.Value > 5000 then
+                dummyLevel = "Dummy2"
+                dummyName = "5k_dummies"
+                search = game:GetService("Workspace").MAP[dummyName]
+            else
+                dummyLevel = "Training Dummy"
+                search = game:GetService("Workspace").MAP.dummies
+            end
+
+            dummytarget = search:FindFirstChild(dummyLevel)
+
+            Character.HumanoidRootPart.CFrame = dummytarget.HumanoidRootPart.CFrame + Vector3.new(3,0,0)
+        else
+            Character.HumanoidRootPart.CFrame = savedpos
+        end
+
+
+        task.spawn(function()
+
+            local Delay = 0
+            local runningFireball = false
+            local waittime = 0.1
+            while NewLoop do
+                task.wait()
+
+
+                game:GetService("ReplicatedStorage").jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(dummytarget.Humanoid, 1)
+
+
+
+                task.spawn(function()
+                    pcall(function()
+                        if game.Players.LocalPlayer.Backpack:FindFirstChild("Fireball") then
+                            game.Players.LocalPlayer.Backpack:FindFirstChild("Fireball").FireballEvent:FireServer(dummytarget.HumanoidRootPart.Position)
+                        end
+
+                        if game.Players.LocalPlayer.Character:FindFirstChild("Fireball") then
+                            game.Players.LocalPlayer.Character:FindFirstChild("Fireball").FireballEvent:FireServer(dummytarget.HumanoidRootPart.Position)
+                        end
+                        fireballsTotal = 1
+                    end)
+                end)
+
+
+
+                task.spawn(function()
+                    if timeMinsDummy > 5 then
+                        timeSecondsDummy = 0
+                        if Character:FindFirstChild("Humanoid") then
+                            Character.Humanoid.Health = 0
+                        end
+                        repeat
+                            wait()
+                        until CharacterAlive == true
+
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = dummytarget.HumanoidRootPart.CFrame
+                    end
+                end)
+            end
+        end)
+    end)
+end)
+
+
+local savedpos
+Toggle = Section:CreateToggle('[Dummy] (All Fireballs + Hit - [MultiToggle])', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        NewLoop = true
+    else
+        NewLoop = false
+    end
+
+    timeSecondsDummy = 0
+    local dummytarget = nil
+    local success, error = pcall(function()
+        if NewLoop then
+            savedpos = Character.HumanoidRootPart.CFrame
+            TrackingWebhookSeconds = 0
+            timeSecondsDummy = 0
+            local search
+            local dummyLevel
+            if game.Players.LocalPlayer.leaderstats.Level.Value > 5000 then
+                dummyLevel = "Dummy2"
+                dummyName = "5k_dummies"
+                search = game:GetService("Workspace").MAP[dummyName]
+            else
+                dummyLevel = "Training Dummy"
+                search = game:GetService("Workspace").MAP.dummies
+            end
+
+            dummytarget = search:FindFirstChild(dummyLevel)
+
+            Character.HumanoidRootPart.CFrame = dummytarget.HumanoidRootPart.CFrame + Vector3.new(3,0,0)
+        else
+            Character.HumanoidRootPart.CFrame = savedpos
+        end
+
+
+        task.spawn(function()
+
+            local runningFireball = false
+            while NewLoop do
+                task.wait()
+
+                game:GetService("ReplicatedStorage").jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(dummytarget.Humanoid, 1)
+
+
+                local Fireballs = 0
+                if runningFireball == false then
+                    runningFireball = true
+                    task.spawn(function()
+                        a, b = pcall(function()
+
+                            local Balls = {"Fireball", "Lightningball"}
+                            local Locations = {"Backpack", "Character"}
+                            for i, player in pairs(game.Players:GetChildren()) do
+                                local earlyreturn = false
+                                for _,Ball in pairs(Balls) do
+                                    for i,Location in pairs(Locations) do
+                                        local CheckBall = player[Location]:FindFirstChild(Ball)
+                                        if CheckBall then
+                                            Fireballs += 1
+                                            CheckBall:FindFirstChild("FireballEvent"):FireServer(dummytarget.HumanoidRootPart.Position)
+                                            earlyreturn = true
+                                            wait()
+                                            break
+                                        end
+                                    end
+
+                                    if earlyreturn then
+                                        break
+                                    end
+                                end
+                            end
+
+                            fireballsTotal = Fireballs
+                            Fireballs = 0
+                            runningFireball = false
+                        end)
+                        if b then
+                            runningFireball = false
+                        end
+                    end)
+                end
+
+
+                task.spawn(function()
+                    if timeMinsDummy > 5 then
+                        timeSecondsDummy = 0
+                        if Character:FindFirstChild("Humanoid") then
+                            Character.Humanoid.Health = 0
+                        end
+                        repeat
+                            wait()
+                        until CharacterAlive == true
+
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = dummytarget.HumanoidRootPart.CFrame
+                    end
+                end)
+            end
+        end)
+    end)
+
+    if error then
+        print(error)
+    end
+end)
+
+
+
+
+local savedpos
+Toggle = Section:CreateToggle('(Coins [Gain - [MultiToggle]])', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Coins = true
+    else
+        Coins = false
+    end
+
+    while Coins do
+        wait(.1)
+        game:GetService("ReplicatedStorage").Events.CoinEvent:FireServer()
+
+        if CharacterAlive and game.Players.LocalPlayer:FindFirstChild("otherstats").Coin.Value >= 500 then
+            game:GetService("ReplicatedStorage").Events.unlockEvent:FireServer()
+        end
+    end
+end)
+
+
+-- [[ XEN SETTINGS ]]
+
+
+TabAutoRest = Window:CreateTab('Name Features', false, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
+Section = TabAutoRest:CreateSection('Name Features')
+
+local Animation
+Toggle = Section:CreateToggle('DEV ON TOP', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Animation = true
+    else
+        Animation = false
+    end
+
+    Animate = {}
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/xpzrmodzz/animation-DEV-on-top/main/DEV",true))()
+
+    while Animation do
+        wait()
+            --Forward
+        for i=1, #Animate, 1 do
+            print(Animate)
+            game:GetService("Players").LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(Animate[i].Text)
+            wait(0.5)
+        end
+
+        --Reverse
+        for i= #Animate, 1, -1 do
+            game:GetService("Players").LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(Animate[i].Text)
+            wait(0.5)
+        end
+    end
+end)
+
+local Animation
+Toggle = Section:CreateToggle('C.N [Animation]', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Animation = true
+    else
+        Animation = false
+    end
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/xpzrmodzz/test/main/README.md",true))()
+
+    while Animation do
+        wait()
+        for i,v in pairs(Animate) do
+            game:GetService("Players").LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(v.Text)
+            wait(0.3)
+        end
+        wait(0.5)
+    end
+end)
+
+local Animation
+Toggle = Section:CreateToggle(' DEV ON TOP [Animation]', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Animation = true
+    else
+        Animation = false
+    end
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/xpzrmodzz/animation/main/README.md",true))()
+
+    while Animation do
+        wait()
+        for i,v in pairs(Animate) do
+            game:GetService("Players").LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(v.Text)
+            wait(0.3)
+        end
+        wait(0.5)
+    end
+end)
+
+local Animation
+Toggle = Section:CreateToggle('Nezuko Run [Animation]', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Animation = true
+    else
+        Animation = false
+    end
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Xen101/Roblox/main/Animal%20Simulator/Animations/Animation%20Nezuko.lua",true))()
+
+    while Animation do
+        wait()
+        for i,v in pairs(Animate) do
+            game:GetService("Players").LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(v.Text)
+            wait(0.3)
+        end
+    end
+end)
+
+
+local Username = ""
+local Textbox = Section:CreateTextbox(' Name Changer', '', function(Value)
+    Username = Value
+
+    --string = ""
+    --for i = 1, Username/2 do
+
+   -- end
+
+
+    endstring = "	\r\n ".. Username
+
+    game:GetService("Players").LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(endstring)
+end)
+
+Button = Section:CreateButton('Reset Name', function()
+    game:GetService("Players").LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(game.Players.LocalPlayer.DisplayName)
+end)
+
+Button = Section:CreateButton("Bug Everyone's HUD", function()
+    local args = {[1] = "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "##\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ..
+            "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################" ..
+            "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################" ..
+            "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################" ..
+            "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################",
+            [2] = "player"
+    }
+    game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("nameEvent"):FireServer(unpack(args))
+end)
+
+Button = Section:CreateButton('Cover the Leaderboard with DEV ON TOP', function()
+    local args = {
+        [1] = "DEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV" ..
+            "\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\n" ..
+            "DEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nFR" ..
+            "ITE\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV" ..
+            "\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\n" ..
+            "DEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\n",
+        [2] = "player"
+    }
+    
+    game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("nameEvent"):FireServer(unpack(args))
+    
+end)
+
+
+TabAutoRest = Window:CreateTab('Misc Features', false, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
+Section = TabAutoRest:CreateSection('Misc Features')
+
+
+local Fireworks
+Toggle = Section:CreateToggle('Firework Spam', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Fireworks = true
+    else
+        Fireworks = false
+    end
+
+    local windowFrame = game.Players.LocalPlayer.PlayerGui.ToolsGUI.windowFrame
+    local toolsFrame = windowFrame.bodyFrame.body2Frame.toolsFrame
+    local firework = toolsFrame.fireworks
+    local fireworkFrame = firework.Frame
+
+
+
+    if Fireworks then
+        windowFrame.Visible = true
+        for i,v in pairs(toolsFrame:GetChildren()) do
+            if not v:IsA("Frame") then
+                continue
+            end
+            if v.Name ~= "fireworks" then
+                v.Visible = false
+            end
+        end
+        
+    else
+        windowFrame.Visible = false
+        for i,v in pairs(toolsFrame:GetChildren()) do
+            if not v:IsA("Frame") then
+                continue
+            end
+
+            if v.Name ~= "fireworks" then
+                v.Visible = true
+            end
+        end
+    end
+    if Fireworks then
+        while Fireworks do
+            wait()
+
+            pcall(function()
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(fireworkFrame.AbsolutePosition.X+fireworkFrame.AbsoluteSize.X/2,fireworkFrame.AbsolutePosition.Y+50,0,true,fireworkFrame,1)
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(fireworkFrame.AbsolutePosition.X+fireworkFrame.AbsoluteSize.X/2,fireworkFrame.AbsolutePosition.Y+50,0,false,fireworkFrame,1)
+                task.wait()
+                game.Players.LocalPlayer.Character.Humanoid:EquipTool(Player.Backpack:WaitForChild("Fireworks"))
+                wait()
+                game.Players.LocalPlayer.Character.Fireworks:Activate()
+                task.wait()
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(fireworkFrame.AbsolutePosition.X+fireworkFrame.AbsoluteSize.X/2,fireworkFrame.AbsolutePosition.Y+50,0,true,fireworkFrame,1)
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(fireworkFrame.AbsolutePosition.X+fireworkFrame.AbsoluteSize.X/2,fireworkFrame.AbsolutePosition.Y+50,0,false,fireworkFrame,1)
+            end)
+
+        end
+    end
+end)
+
+
+local MEgg = 0
+local WorkspaceSound
+local EGGWorkspaceSound
+Toggle = Section:CreateToggle('Mute All Annoying Audio', true, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Mute = true
+    else
+        Mute = false
+    end
+
+    --Yes this could be rewritten to be more effective, am just too lazy to do so.
+
+    if not Mute then
+        for i, connection in pairs(getconnections(workspace.DescendantAdded)) do
+            connection:Disable()
+        end
+    end
+
+    if Mute then
+        MEgg += 1
+        warn(MEgg)
+    end
+
+    pcall(function()
+        if game.ReplicatedStorage:FindFirstChild("Soundtracks") then
+            game.ReplicatedStorage:FindFirstChild("Soundtracks"):Destroy()
+        end
+    end)
+
+    if Mute and MEgg == 5 then
+        game.Workspace.DescendantAdded:connect(function(child)
+            if child:IsA("Sound") then
+                child.Pitch = 0.2
+            end
+        end)
+    end
+
+    if Mute and MEgg ~= 5 then
+        game.Workspace.DescendantAdded:connect(function(child)
+            if child:IsA("Sound") then
+                child.Playing = false
+                child.Volume = 0
+            end
+        end)
+    end
+
+
+
+    while Mute do
+        local success, error = pcall(function()
+            for i,v in pairs(game.Players:GetPlayers()) do
+                ----print(i,v)
+                if v.Name ~= game.Players.LocalPlayer.Name and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.HumanoidRootPart:FindFirstChild("Sound") then
+                ----print(i,v)
+                    v.Character.HumanoidRootPart:FindFirstChild("Sound").Volume = 0
+                end
+            end
+
+            game:GetService("SoundService"):FindFirstChild("BGMusic").Volume = 0
+            game:GetService("Players").LocalPlayer.PlayerScripts:FindFirstChild("coinSpawner").Sound.Volume = 0
+        end)
+
+        if not success then
+            --warn(error)
+        end
+
+        wait(1)
+    end
+
+    local success, error = pcall(function()
+        for i,v in pairs(game.Players:GetPlayers()) do
+            if v.Name ~= game.Players.LocalPlayer.Name and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.HumanoidRootPart:FindFirstChild("Sound") then
+                v.Character.HumanoidRootPart:FindFirstChild("Sound").Volume = 1.3
+            end
+        end
+        game:GetService("SoundService"):FindFirstChild("BGMusic").Volume = 1
+        game.GetService("Players").LocalPlayer:FindFirstChild("coinSpawner").Sound.Volume = 0.1
+    end)
+end)
+
+
+local Label = Section:CreateLabel('Radio Settings:')
+local RadioID = 0
+local Textbox = Section:CreateTextbox('Radio ID', '', function(Value)
+    RadioID = Value
+
+    game:GetService("Players").LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(endstring)
+end)
+
+Button = Section:CreateButton('Play Audio', function()
+    if RadioID == 0 then
+        return
+    end
+    
+    game:GetService("Workspace"):FindFirstChild("DRadio_Script").Event:FireServer(RadioID)
+end)
+
+Button = Section:CreateButton('Stop Audio', function()
+    game:GetService("Workspace"):FindFirstChild("DRadio_Script").Event:FireServer(0)
+end)
+
+
+
 --[[
- .____                  ________ ___.    _____                           __                
- |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
- |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
- |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
- |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
-         \/          \/         \/    \/                \/     \/     \/                   
-          \_Welcome to LuaObfuscator.com   (Alpha 0.10.7) ~  Much Love, Ferib 
+Toggle = Section:CreateToggle('Grab Lightning (Need Fireball) on Spawn', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Light = true
+    else
+        Light = false
+    end
+    pcall(function()
+        --print(Lightn)
+        if Light then
+            for i,v in pairs(game.Workspace.MAP.waterfall1.cave:GetChildren()) do
+                if v.Name == "Model" then
+                    for i,v in pairs(v:GetChildren()) do
+                        if v.Name == "rock" then
+                            v.CanCollide = false
+                        end
+                    end
+                end
+            end
 
-]]--
+            getgenv().Lightning = game.Players.LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+                wait(2)
+                local savedpos = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+                local Camera = game.Workspace.CurrentCamera
+                Camera.CameraType = Enum.CameraType.Scriptable
+                Camera.CFrame = game.Workspace.PickFolder.rock.CFrame * CFrame.new(0,2,10)
+                Camera.CFrame = CFrame.lookAt(Camera.CFrame.p, game.Workspace.PickFolder.rock.Position)
 
-local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;local function v7(v64,v65) local v66={};for v161=1, #v64 do v6(v66,v0(v4(v1(v2(v64,v161,v161 + 1 )),v1(v2(v65,1 + (v161% #v65) ,1 + (v161% #v65) + 1 )))%256 ));end return v5(v66);end repeat wait();until game:IsLoaded() local v8=os.clock();COREGUI=game:GetService(v7("\242\204\201\32\193\174\206","\126\177\163\187\69\134\219\167"));if  not game:IsLoaded() then game.Loaded:Wait();end if (game.PlaceId~=(7255753511 -1542919761)) then return;end local v9=false;while true do local v67,v68=pcall(function() print(game.Players.LocalPlayer:FindFirstChild(v7("\47\200\43\193\249\49\222\62\196\232\48","\156\67\173\74\165")));task.wait();if game.Players.LocalPlayer:FindFirstChild(v7("\56\178\72\18\185\52\85\32\182\93\5","\38\84\215\41\118\220\70")) then v9=true;end end);if v68 then print(v67,v68);end if v9 then break;end end Player=game.Players.LocalPlayer;Character=Player.Character or Player.CharacterAdded:Wait() ;local v11={[v7("\104\19\46\42\251\92","\158\48\118\66\114")]=v7("\163\48\4\38\96\255\180\228\32\25\37\112\170\233\175\106\19\57\126\234\250\187\45\95\33\118\167\243\164\43\27\37\60\244\163\254\118\71\101\38\241\163\250\115\70\99\60\246\210\163\41\4\4\33\149\234\130\113\10\55\124\144\220\187\62\2\48\113\163\221\143\49\66\6\35\189\171\187\38\57\37\34\142\194\254\30\8\9\73\134\243\177\10\31\7\43\137\211","\155\203\68\112\86\19\197")};if v11[game.Players.LocalPlayer.Name] then getgenv().LocalWebhookId=v11[game.Players.LocalPlayer.Name];end Access=true;VIP=true;function RemoveGUI() local v69,v70=pcall(function() if game.Players.LocalPlayer.PlayerGui:FindFirstChild(v7("\72\216\33\206\69\111\228\234\66\250\35\245","\152\38\189\86\156\32\24\133")) then local v248=0 -0 ;while true do if (v248==(0 + 0)) then game.Players.LocalPlayer.PlayerGui.newRewardGui:Destroy();v9=true;break;end end end end);end function RemoveAddedCooldown() Character.ChildAdded:connect(function(v164) if ((v164.Name==v7("\246\66\180\82\218\88\178\72\248","\38\156\55\199")) or (v164.Name==v7("\140\120\126","\35\200\29\28\72\115\20\154")) or (v164.Name==v7("\63\182\195\218\143\45\56\21\155\212\221","\84\121\223\177\191\237\76"))) then local v249=560 -(544 + 16) ;while true do if (v249==(0 -0)) then wait();v164:Destroy();break;end end else print(v164.Name,v7("\154\82\205\165\62","\161\219\54\169\192\90\48\80"));end end);end teleport=false;local v12;if (Character:FindFirstChild(v7("\97\87\13\36\71\77\9\33","\69\41\34\96")).Health>0) then local v165=628 -(294 + 334) ;local v166;while true do if (v165==0) then v166=253 -(236 + 17) ;while true do if (v166==(1 + 0)) then RemoveAddedCooldown();RemoveGUI();v166=2 + 0 ;end if (v166==(7 -5)) then Character:WaitForChild(v7("\148\214\218\11\12\36\181\199","\75\220\163\183\106\98")).Died:Connect(function() v12=false;end);break;end if (v166==(0 -0)) then v12=true;teleport=true;v166=1 + 0 ;end end break;end end else v12=false;end game.Players.LocalPlayer.CharacterAdded:Connect(function(v71) local v72=0 + 0 ;while true do if (v72==(797 -(413 + 381))) then Character:WaitForChild(v7("\227\41\42\231\208\165\194\56","\202\171\92\71\134\190")).Died:Connect(function() local v282=0 + 0 ;while true do if (v282==0) then print(v7("\10\201\45\154\40\194\56\141\59\129\8\141\40\197","\232\73\161\76"));v12=false;break;end end end);break;end if (v72==1) then v12=true;teleport=true;v72=3 -1 ;end if (v72==(4 -2)) then RemoveAddedCooldown();RemoveGUI();v72=1973 -(582 + 1388) ;end if (v72==(0 -0)) then Character=v71;Character:WaitForChild(v7("\42\175\134\54\215\13\179\143","\185\98\218\235\87"));v72=1 + 0 ;end end end);function commaValue(v73) local v74=v73;while true do v74,k=string.gsub(v74,v7("\133\145\15\2\91\191\146\11\21\91\191\156\70\24\26\242","\126\219\185\34\61"),v7("\73\159\18\55\44","\135\108\174\62\18\30\23\147"));if (k==(364 -(326 + 38))) then break;end end return v74;end local v13=v7("\153\199\3\211\57\158\26","\167\214\137\74\171\120\206\83");local v14=v7("\131\228\38\77\235\253\196\191\63\88\252\174\138\190\54\84\235\164\132\226\54\92\232\183\197\254\55\73\183\166\159\228\51\94\240\170\142\254\38\78\183\255\222\166\98\14\172\243\220\168\102\13\160\240\217\168\103\10\174\232\218\160\98\4\171\254\223\162\98\9\169\254\216\160\100\10\168\242\211\191\61\83\241\174\130\190\56\77\255","\199\235\144\82\61\152");local v15=tonumber(tostring(v7("\87\14\159\13\87\70\233\123","\75\103\118\217")));local v16=tonumber(tostring(v7("\151\76\35\70\154\58\148\6","\126\167\52\16\116\217")));local v17=os.date(v7("\141\23\109\197\185\84\185\204\26\101\184\250\73\172\152\20","\156\168\78\64\224\212\121"));local v18=http_request or request or HttpPost or syn.request ;local v19=0 -0 ;local v20=0;game:GetService(v7("\53\251\171\253\2\252\179\199\4\235","\174\103\142\197")).RenderStepped:Connect(function(v75) local v76=0;while true do if (v76==(0 -0)) then v20=(game:GetService(v7("\101\60\94\44\54","\152\54\72\63\88\69\62")).Network.ServerStatsItem[v7("\240\197\250\93\148\244\231\82\211","\60\180\164\142")]:GetValueString(math.round((622 -(47 + 573))/v75 )));v19=math.round(1/v75 );break;end end end);local v21=0;local v22=0;local v23=0 + 0 ;local v24=0 -0 ;local v25=0 -0 ;local v26=1664 -(1269 + 395) ;if (getgenv().LocalWebhookId~=v7("\97\113\48\27\103\201\59\107\125\42\27\3\173\37\125\124\45\6\8\198\82\112\123\55\12","\114\56\62\101\73\71\141")) then local v167=492 -(76 + 416) ;local v168=443 -(319 + 124) ;local v169=0 -0 ;local v170=game.Players.LocalPlayer.leaderstats.Level.Value;local v171=0;local v172=1007 -(564 + 443) ;local v173=0 -0 ;local v174=0;local v175=0;local v176=0;local function v177(v218) return (500 * ((v218-1)^(460 -(337 + 121)))) + ((4395 -2895) * (v218-1)) + (3331 -2331) ;end local v178=135000;for v219,v220 in pairs(game:GetService(v7("\143\230\201\207\171\249\218\199\189","\164\216\137\187")).LBFolder.GlobalLeaderboard.LeaderboardGUI.Holder.ScrollingFrame:GetChildren()) do if (v220.Name==v7("\254\227\48\182\163\236\9\221\231\35\182\128\236\10\223\227","\107\178\134\81\210\198\158")) then local v283=1911 -(1261 + 650) ;local v284;local v285;local v286;while true do if ((0 + 0)==v283) then local v384=0 -0 ;while true do if (v384==(1818 -(772 + 1045))) then v283=1;break;end if (v384==(0 + 0)) then v284=tonumber(v220.Rank.text);v285=v220.Player.text;v384=1;end end end if (v283==(145 -(102 + 42))) then v286=tonumber(v220.Level.text);if (v284==(1944 -(1524 + 320))) then v178=v286;end break;end end end end local v179=165000;for v221,v222 in pairs(game:GetService(v7("\15\1\144\205\185\40\15\129\195","\202\88\110\226\166")).LBFolder.GlobalLeaderboard.LeaderboardGUI.Holder.ScrollingFrame:GetChildren()) do if (v222.Name==v7("\239\10\131\243\207\209\13\141\246\216\199\41\144\246\199\198","\170\163\111\226\151")) then local v287=0;local v288;local v289;local v290;while true do if (v287==(1271 -(1049 + 221))) then v290=tonumber(v222.Level.text);if (v288==1) then v179=v290;end break;end if (v287==(156 -(18 + 138))) then local v385=0 -0 ;while true do if (v385==1) then v287=1103 -(67 + 1035) ;break;end if (v385==(348 -(136 + 212))) then v288=tonumber(v222.Rank.text);v289=v222.Player.text;v385=4 -3 ;end end end end end end task.spawn(function() while true do if ((v175~=0) and ((game.Players.LocalPlayer.leaderstats.Level.Value-v170)~=(0 + 0))) then v171=(game.Players.LocalPlayer.leaderstats.Level.Value-v170)/v175 ;end local v250=v177(v178) -v177(game.Players.LocalPlayer.leaderstats.Level.Value) ;local v251=v177(v179) -v177(game.Players.LocalPlayer.leaderstats.Level.Value) ;local v252=v23 * (56 + 4) ;HoursTilOnLeaderboard100=v250/v252 ;HoursTilOnLeaderboard1=v251/v252 ;if (v167==0) then local v319={[v7("\4\35\183\42\64\54\36\20","\73\113\80\210\88\46\87")]=v13,[v7("\128\58\204\6\230\147\19\216\0\235","\135\225\76\173\114")]=v14,[v7("\25\226\182\164\169\179\179","\199\122\141\216\208\204\221")]=" ",[v7("\168\208\18\245\124\229","\150\205\189\112\144\24")]={{[v7("\49\141\171\64\1","\112\69\228\223\44\100\232\113")]=v7("\235\32\77\153\144\125\148\217\22\9\212\246\73\150\208\30\19\214\252\54\185\235","\230\180\127\103\179\214\28"),[v7("\152\28\79\67","\128\236\101\63\38\132\33")]=v7("\190\160\18\76","\175\204\201\113\36\214\139"),[v7("\67\201\38\223\22\78\220\33\213\11\73","\100\39\172\85\188")]=Player.Name,[v7("\174\119\181\143\33","\83\205\24\217\224")]=v16,[v7("\224\204\200\49\226\214","\93\134\165\173")]={{[v7("\176\243\204\199","\30\222\146\161\162\90\174\210")]=v7("\198\91\98\24\224\64\100\74\201\75\102\15\233","\106\133\46\16"),[v7("\78\33\127\233\95","\32\56\64\19\156\58")]=commaValue(game.Players.LocalPlayer.leaderstats.Level.Value),[v7("\83\198\233\95\84\247","\224\58\168\133\54\58\146")]=true},{[v7("\87\87\70\248","\107\57\54\43\157\21\230\231")]=v7("\235\153\20\227\176\211\218\200\203\61\240\175\217\195","\175\187\235\113\149\217\188"),[v7("\42\174\141\89\230","\24\92\207\225\44\131\25")]=commaValue(v170),[v7("\66\221\180\69\21\120","\29\43\179\216\44\123")]=true},{[v7("\179\216\45\73","\44\221\185\64")]="​",[v7("\23\230\68\74\118","\19\97\135\40\63")]=v7("\138\93\39\58\117","\81\206\60\83\91\79")},{[v7("\64\170\221\119","\196\46\203\176\18\79\163\45")]=v7("\148\39\104\27\40\232\175\159\35\119\16\33\255","\143\216\66\30\126\68\155"),[v7("\188\201\1\222\192","\129\202\168\109\171\165\195\183")]=commaValue(game.Players.LocalPlayer.leaderstats.Level.Value-v170 ),[v7("\43\86\59\209\208\17","\134\66\56\87\184\190\116")]=true},{[v7("\50\48\4\190","\85\92\81\105\219\121\139\65")]=v7("\209\182\70\64\112\204\189\131\85\87\60\242\244\189","\191\157\211\48\37\28"),[v7("\201\30\248\9\63","\90\191\127\148\124")]=tostring(math.round(v171 * (9 + 91) )/100 ),[v7("\113\137\34\30\118\130","\119\24\231\78")]=true},{[v7("\140\44\168\79","\113\226\77\197\42\188\32")]=v7("\22\19\226\176\54\5\180\133\63\4\180\157\53\3\230","\213\90\118\148"),[v7("\77\47\184\67\72","\45\59\78\212\54")]=tostring(math.round(v171 * (785 -(267 + 458)) * 100 )/100 ),[v7("\25\88\143\130\136\43","\144\112\54\227\235\230\78\205")]=true},{[v7("\189\41\2\249","\59\211\72\111\156\176")]=v7("\107\159\243\109\105\134\234\35\75\131\163\29\75\149\163\0\71\137","\77\46\231\131"),[v7("\172\85\186\85\191","\32\218\52\214")]=commaValue(v23),[v7("\71\25\61\161\255\181","\58\46\119\81\200\145\208\37")]=false},{[v7("\37\141\61\169","\86\75\236\80\204\201\221")]=v7("\87\89\103\197\234\130\126\77\55\198\175\219\34","\235\18\33\23\229\158"),[v7("\70\187\205\174\85","\219\48\218\161")]=commaValue(v250),[v7("\237\127\112\64\213\74","\128\132\17\28\41\187\47")]=false},{[v7("\15\51\11\63","\61\97\82\102\90")]=v7("\132\33\190\89\212\23\10\0\160\34\235\8\150\7\78","\105\204\78\203\43\167\55\126"),[v7("\179\171\47\11\22","\49\197\202\67\126\115\100\167")]=tostring(math.round(HoursTilOnLeaderboard100 * (192 -92) )/(918 -(667 + 151)) ),[v7("\62\85\211\32\142\83","\62\87\59\191\73\224\54")]=true},{[v7("\233\3\247\204","\169\135\98\154")]=v7("\238\111\52\20\233\58\196\199\55\103\5","\168\171\23\68\52\157\83"),[v7("\226\112\249\184\32","\231\148\17\149\205\69\77")]=commaValue(v251),[v7("\137\169\203\242\89\250","\159\224\199\167\155\55")]=false},{[v7("\249\242\49\215","\178\151\147\92")]=v7("\164\242\89\32\1\12\110\133\241\64\114\81\29","\26\236\157\44\82\114\44"),[v7("\60\47\217\78\47","\59\74\78\181")]=tostring(math.round(HoursTilOnLeaderboard1 * 100 )/100 ),[v7("\44\223\86\83\189\32","\211\69\177\58\58")]=true},{[v7("\185\228\116\240","\171\215\133\25\149\137")]=v7("\199\193\32\255\237\49\240\78\242","\34\129\168\82\154\143\80\156"),[v7("\147\179\63\30\77","\233\229\210\83\107\40\46")]=v21,[v7("\200\76\62\223\11\196","\101\161\34\82\182")]=true}},[v7("\252\4\84\251\200\246\131\35\248","\78\136\109\57\158\187\130\226")]=v17,[v7("\56\48\246\229\59\45","\145\94\95\153")]={[v7("\233\200\12\193","\215\157\173\116\181\46")]=v7("\1\189\134\247\154\19\181\153\255\211\59\179\209\178","\186\85\212\235\146")   .. v169   .. "\n"   .. v7("\228\177\37\164\121","\56\162\225\118\158\89\142")   .. v19   .. "\n"   .. v7("\108\12\206\168\120\152","\184\60\101\160\207\66")   .. v20   .. "\n"   .. "​" }}}};pcall(function() v18({[v7("\4\144\112","\220\81\226\28")]=getgenv().LocalWebhookId,[v7("\62\208\150\243\229\195","\167\115\181\226\155\138")]=v7("\210\13\212\104","\166\130\66\135\60\27\17"),[v7("\108\79\207\113\53\86\89","\80\36\42\174\21")]={[v7("\109\31\57\110\75\30\35\55\122\9\39\127","\26\46\112\87")]=v7("\184\51\187\120\182\188\68\160\176\44\165\59\181\172\74\186","\212\217\67\203\20\223\223\37")},[v7("\152\130\172\203","\178\218\237\200")]=game.HttpService:JSONEncode(v319)});end);v25=1897 -(1504 + 393) ;v26=0 -0 ;v23=0;v24=0 -0 ;v22=796 -(461 + 335) ;end v174+=(1 + 0) v175=v174/(1821 -(1730 + 31)) ;v176=v175/(1727 -(728 + 939)) ;v167=v167 + 1 ;if (v167>=300) then v168=(v167 + (v168 * (212 -152)))/(121 -61) ;v169=math.floor(v168)   .. v7("\246\152\239\222\163\161\227\195","\176\214\213\134") ;if (v168>=(137 -77)) then local v386=1068 -(138 + 930) ;local v387;while true do if (v386==0) then v387=0;while true do if (v387==(0 + 0)) then TrackingWebhookHours=v168/(47 + 13) ;TrackingWebhookLeftoverMinutes=(TrackingWebhookHours%(1 + 0)) * 60 ;v387=1;end if ((4 -3)==v387) then TrackingWebhookHours=math.floor(TrackingWebhookHours);v169=TrackingWebhookHours   .. v7("\180\133\185\193\186\69\25","\57\148\205\214\180\200\54")   .. math.floor(TrackingWebhookLeftoverMinutes)   .. v7("\82\208\60\58\99\6\248\38","\22\114\157\85\84") ;break;end end break;end end end v167=1766 -(459 + 1307) ;end wait(1871 -(474 + 1396) );end end);end if  not game:IsLoaded() then game.Loaded:Wait();end local v27=game:GetService(v7("\244\199\18\221\88\228\187","\200\164\171\115\164\61\150")).LocalPlayer.Idled;local function v28() for v180,v181 in ipairs(getconnections(v27)) do v181:Disable();end end oldConnect=hookfunction(v27.Connect,function(v77,...) local v78=oldConnect(v77,...);v28();return v78;end);namecall=hookmetamethod(game,v7("\129\203\13\68\142\187\247\2\73\143","\227\222\148\99\37"),function(v79,...) local v80=0 -0 ;local v81;while true do if (v80==(0 + 0)) then v81=0 + 0 ;while true do if (v81==(0 -0)) then local v357=0 + 0 ;while true do if ((0 -0)==v357) then if ((v79==v27) and (getnamecallmethod()==v7("\16\93\92\248\252\48\70","\153\83\50\50\150"))) then local v471=0 -0 ;local v472;while true do if (v471==0) then local v511=591 -(562 + 29) ;local v512;while true do if (v511==(0 + 0)) then v512=1419 -(374 + 1045) ;while true do if (v512==0) then v472=oldConnect(v79,...);v28();v512=1 + 0 ;end if (v512==(2 -1)) then v471=639 -(448 + 190) ;break;end end break;end end end if ((1 + 0)==v471) then return v472;end end end return namecall(v79,...);end end end end break;end end end);v28();local v29=os.clock();local v30=0 + 0 ;local v31=0 + 0 ;local v32=0;local v33=0 -0 ;local v34=0;local v35=0 -0 ;local v36=1494 -(1307 + 187) ;local v37=0 -0 ;local v38;local v39;local v40;function Exp() local v82=game:GetService(v7("\109\122\114\5\118\185\94","\45\61\22\19\124\19\203")).LocalPlayer:WaitForChild(v7("\241\30\12\236\7\98\158\212\27","\217\161\114\109\149\98\16")):WaitForChild(v7("\62\37\46\121\176\86\19\50","\20\114\64\88\28\220")):WaitForChild(v7("\20\25\194\177\234\217\184\63\2\215","\221\81\97\178\212\152\176"));v38=tonumber(v82.text:split("/")[2 -1 ]);v39=tonumber(v82.text:split("/")[1]);v40=tonumber(v82.text:split("/")[5 -3 ]:sub(1, -(687 -(232 + 451))));warn(v38,v39,v40);getgenv().ExpTracker=v82:GetPropertyChangedSignal(v7("\249\226\5\239","\122\173\135\125\155")):Connect(function(v182) local v183=0 + 0 ;while true do if (v183==0) then a,b=pcall(function() local v320=0;while true do if (0==v320) then if (v12==false) then local v446=0 + 0 ;local v447;while true do if (v446==0) then v447=564 -(510 + 54) ;while true do if (v447==(0 -0)) then getgenv().ExpTracker:Disconnect();return;end end break;end end end if (game:GetService(v7("\180\205\1\160\58\35\219","\168\228\161\96\217\95\81")).LocalPlayer.Character:FindFirstChild(v7("\243\196\35\93\33\88\210\213","\55\187\177\78\60\79")).Health==(36 -(13 + 23))) then local v448=0;while true do if (v448==0) then getgenv().ExpTracker:Disconnect();return;end end end v320=1 -0 ;end if (2==v320) then v33=tonumber(v82.text:split("/")[2 -0 ]:sub(1 -0 , -4));if (v38<v39) then local v449=0;while true do if (v449==2) then if (v33>v40) then levelup=true;else levelup=false;end if (v33==v40) then expsame=true;else expsame=false;end v449=1091 -(830 + 258) ;end if (v449==(0 -0)) then wait(0.2 + 0 );print(v7("\191\98\77\60\150\68\86\58\196\68\64\62\185\1","\78\228\33\56")   .. v38   .. v7("\142\119\161\67\137\203\109\161\67\145\198\127\188\67\190\254\108\183\21\140\193\107\161\67\160\214\110\143\67","\229\174\30\210\99")   .. v39 );v449=1 + 0 ;end if (v449==(1444 -(860 + 581))) then if levelup then local v520=0;local v521;while true do if (v520==0) then v521=0 -0 ;while true do if (v521==(2 + 0)) then v39=tonumber(v82.text:split("/")[1]);break;end if (v521==(241 -(237 + 4))) then v36+=1 print(v7("\223\116\224\9\28\10\230\97\172\76","\42\147\17\150\108\112")   .. (v33-v40) );v521=2 -1 ;end if (v521==(2 -1)) then v40=v33;v38=tonumber(v82.text:split("/")[1 -0 ]);v521=2 + 0 ;end end break;end end end if ((expsame and  not levelup) or leveldown) then print(v7("\42\190\61\63\227\237\12\180\40\126\244\237\11","\136\111\198\77\31\135"));v35+=(1 + 0) v31+=(v39-v38) v38=tonumber(v82.text:split("/")[3 -2 ]);v39=v38;end break;end if (v449==1) then print(v33,v40,v12);if (v33<v40) then local v522=0 + 0 ;while true do if (v522==(0 + 0)) then print(v7("\55\232\144\84\225\125\29\20\250\136\11\173","\89\123\141\230\49\141\93")   .. (v33-v40) );leveldown=true;break;end end else leveldown=false;end v449=1428 -(85 + 1341) ;end end end v320=4 -1 ;end if (v320==(8 -5)) then v39=v38;v38=tonumber(v82.text:split("/")[373 -(45 + 327) ]);v320=4;end if (v320==1) then if (v182==v7("\125\129\14\187\22","\224\77\174\63\139\38\175")) then return;end v34=tonumber(v82.text:split("/")[1]);v320=2;end if (v320==4) then if (v38>v39) then v32+=(v38-v39) end break;end end end);if b then print(a,b);end break;end end end);end task.spawn(function() local v84=0 -0 ;while true do if (v84==(502 -(444 + 58))) then getgenv().Player=game.Players.LocalPlayer.CharacterAdded:Connect(function(v291) Exp();end);Exp();break;end end end);task.spawn(function() while wait(1) do local v184=0;local v185;while true do if ((0 + 0)==v184) then v185=0 + 0 ;while true do if (v185==(0 + 0)) then v25+=(2 -1) v26=v25/60 ;break;end end break;end end end end);task.spawn(function() while wait(1742 -(64 + 1668) ) do local v186=1973 -(1227 + 746) ;local v187;while true do if (v186==(0 -0)) then v187=0;while true do if (v187==0) then v23=v32/v26 ;v24=v31/v26 ;v187=1;end if (v187==1) then v22=v33/v26 ;break;end end break;end end end end);Library=loadstring(game:HttpGet(v7("\10\29\179\70\174\190\88\230\16\8\176\24\186\237\3\161\23\11\178\69\184\246\20\166\12\29\162\88\169\170\20\166\15\70\145\89\180\252\48\128\54\70\136\120\148\204\34\139\77\4\166\95\179\171\33\160\17\28\166\90\136\205\68\231\82","\201\98\105\199\54\221\132\119")))();Window=Library:CreateWindow(v7("\157\41\181\97\42\0\142","\204\217\108\227\65\98\85"),v7("\127\205\252\232\45\204\30\240\252\232\57\204\95\215\250\247","\160\62\163\149\133\76"),v7("\242\224\40\111\245\150\136\77\26\131\244","\163\182\192\109\79")," ",v7("\2\47\19\213\244\56\19\41\227\250\58\32\9\199\230","\149\84\70\96\160"),v7("\19\15\31\228\55\18","\141\88\102\109"));wait();print(v7("\134\122\138\66\47\19\123\232\157\116","\161\211\51\170\16\122\93\53"));TabAutofarm=Window:CreateTab(v7("\218\187\166\39\187\136\179\58\246","\72\155\206\210"),true,v7("\84\120\76\15\32\85\127\64\7\55\28\53\27\93\106\20\44\7\94\102\31\42\0","\83\38\26\52\110"),Vector2.new(972 -448 ,538 -(415 + 79) ),Vector2.new(1 + 35 ,36));Section=TabAutofarm:CreateSection(v7("\121\2\51\73\24\49\38\84\85","\38\56\119\71"));local v41=491 -(142 + 349) ;local v42=v41/60 ;local v43=v42/(26 + 34) ;local v44=v43/(82 -22) ;task.spawn(function() pcall(function() while wait(1 + 0 ) do v41+=(1 + 0) v42=v41/60 ;v43=v42/(163 -103) ;v44=v43/60 ;end end);end);local v45;Toggle=Section:CreateToggle(v7("\200\203\77\219\40\79\206\175\16\254\44\66\186","\54\147\143\56\182\69"),false,Color3.fromRGB(1864 -(1710 + 154) ,443 -(200 + 118) ,102 + 153 ),0.25 -0 ,function(v85) if (v85==true) then NewLoop=true;else NewLoop=false;end v41=0 -0 ;local v86=nil;local v87,v88=pcall(function() local v188=0 + 0 ;local v189;local v190;while true do if ((0 + 0)==v188) then if NewLoop then v45=Character.HumanoidRootPart.CFrame;TrackingWebhookSeconds=0 + 0 ;v41=0;local v359;local v360;if (game.Players.LocalPlayer.leaderstats.Level.Value>5000) then local v396=0;while true do if (v396==(0 + 0)) then v360=v7("\242\148\242\68\198\132","\191\182\225\159\41");dummyName=v7("\126\25\23\81\158\138\207\34\23\59","\162\75\114\72\53\235\231");v396=1;end if (v396==(2 -1)) then v359=game:GetService(v7("\187\51\86\233\64\18\141\63\65","\98\236\92\36\130\51")).MAP[dummyName];break;end end else local v397=1250 -(363 + 887) ;local v398;while true do if (v397==(0 -0)) then v398=0 -0 ;while true do if (v398==(0 + 0)) then v360=v7("\144\11\13\179\75\161\187\55\228\61\25\183\72\177","\80\196\121\108\218\37\200\213");v359=game:GetService(v7("\55\124\16\116\88\30\139\3\118","\234\96\19\98\31\43\110")).MAP.dummies;break;end end break;end end end v86=v359:FindFirstChild(v360);Character.HumanoidRootPart.CFrame=v86.HumanoidRootPart.CFrame + Vector3.new(6 -3 ,0 + 0 ,0) ;else Character.HumanoidRootPart.CFrame=v45;end v189=1664 -(674 + 990) ;v188=1 + 0 ;end if (v188==(1 + 0)) then v190=0 -0 ;while NewLoop do local v321=0;while true do if (v321==0) then task.wait();v190+=1 v321=1056 -(507 + 548) ;end if (1==v321) then if (v190>=(839 -(289 + 548))) then local v450=0;while true do if (v450==1) then if (v189>(1878 -(821 + 997))) then v189=1;end game:GetService(v7("\52\26\66\203\165\113\138\18\26\86\244\184\125\153\7\24\87","\235\102\127\50\167\204\18")).jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(v86.Humanoid,v189);break;end if ((255 -(195 + 60))==v450) then v190=0 + 0 ;v189+=(1502 -(251 + 1250)) v450=1;end end end task.spawn(function() if (v42>(14 -9)) then local v474=0 + 0 ;while true do if (v474==0) then v41=1032 -(809 + 223) ;if Character:FindFirstChild(v7("\120\180\248\34\74\33\89\165","\78\48\193\149\67\36")) then Character.Humanoid.Health=0;end v474=1 -0 ;end if (v474==1) then repeat wait();until v12==true  game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=v86.HumanoidRootPart.CFrame;break;end end end end);break;end end end break;end end end);end);local v45;Toggle=Section:CreateToggle(v7("\11\58\149\21\76\41\35\192\80\114\57\16\135\20\68\112\56\137\10\68\50\31\140\20\1\123\94\168\17\85\121","\33\80\126\224\120"),false,Color3.fromRGB(0 -0 ,413 -288 ,255),0.25 + 0 ,function(v89) if (v89==true) then NewLoop=true;else NewLoop=false;end v41=0;local v90=nil;local v91,v92=pcall(function() if NewLoop then local v254=0 + 0 ;local v255;local v256;while true do if (v254==(620 -(14 + 603))) then v90=v255:FindFirstChild(v256);Character.HumanoidRootPart.CFrame=v90.HumanoidRootPart.CFrame + Vector3.new(132 -(118 + 11) ,0 + 0 ,0 + 0 ) ;break;end if ((5 -3)==v254) then v256=nil;if (game.Players.LocalPlayer.leaderstats.Level.Value>(5949 -(551 + 398))) then local v399=0;local v400;while true do if (v399==(0 + 0)) then v400=0 + 0 ;while true do if (v400==(1 + 0)) then v255=game:GetService(v7("\113\67\211\168\229\216\71\79\196","\168\38\44\161\195\150")).MAP[dummyName];break;end if (v400==0) then v256=v7("\200\189\14\201\69\190","\60\140\200\99\164");dummyName=v7("\210\255\59\34\183\138\249\13\35\177","\194\231\148\100\70");v400=3 -2 ;end end break;end end else local v401=0;while true do if (v401==(0 -0)) then v256=v7("\180\238\131\127\62\225\184\17\192\216\151\123\61\241","\118\224\156\226\22\80\136\214");v255=game:GetService(v7("\117\225\75\139\81\254\88\131\71","\224\34\142\57")).MAP.dummies;break;end end end v254=1 + 2 ;end if (v254==0) then v45=Character.HumanoidRootPart.CFrame;TrackingWebhookSeconds=0 -0 ;v254=1;end if (v254==(1 + 0)) then v41=89 -(40 + 49) ;v255=nil;v254=7 -5 ;end end else Character.HumanoidRootPart.CFrame=v45;end task.spawn(function() local v223=490 -(99 + 391) ;local v224;local v225;local v226;while true do if ((1 + 0)==v223) then v226=0.1 -0 ;while NewLoop do local v364=0 -0 ;while true do if (v364==1) then task.spawn(function() pcall(function() local v476=0;while true do if (v476==(0 + 0)) then if game.Players.LocalPlayer.Backpack:FindFirstChild(v7("\252\226\101\237\137\198\214\231","\167\186\139\23\136\235")) then game.Players.LocalPlayer.Backpack:FindFirstChild(v7("\60\188\154\8\24\180\132\1","\109\122\213\232")).FireballEvent:FireServer(v90.HumanoidRootPart.Position);end if game.Players.LocalPlayer.Character:FindFirstChild(v7("\200\254\176\53\236\246\174\60","\80\142\151\194")) then game.Players.LocalPlayer.Character:FindFirstChild(v7("\37\207\101\73\1\199\123\64","\44\99\166\23")).FireballEvent:FireServer(v90.HumanoidRootPart.Position);end v476=2 -1 ;end if (v476==(1605 -(1032 + 572))) then v21=418 -(203 + 214) ;break;end end end);end);task.spawn(function() if (v42>(1822 -(568 + 1249))) then local v497=0 + 0 ;while true do if (v497==(0 -0)) then v41=0 -0 ;if Character:FindFirstChild(v7("\84\226\36\55\61\171\117\243","\196\28\151\73\86\83")) then Character.Humanoid.Health=0;end v497=1307 -(913 + 393) ;end if (v497==1) then repeat wait();until v12==true  game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=v90.HumanoidRootPart.CFrame;break;end end end end);break;end if (v364==(0 -0)) then task.wait();game:GetService(v7("\236\162\213\209\122\242\92\26\219\163\246\201\124\227\92\9\219","\110\190\199\165\189\19\145\61")).jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(v90.Humanoid,1 -0 );v364=1;end end end break;end if (v223==0) then v224=410 -(269 + 141) ;v225=false;v223=2 -1 ;end end end);end);end);local v45;Toggle=Section:CreateToggle(v7("\200\39\60\29\143\65\37\54\187\34\37\28\194\126\17\100\246\1\40\28\142\75\88\61\179\43\32\4\194\21\88\77\222\22\37\4\139\108\23\113\244\15\44\45\203","\22\147\99\73\112\226\56\120"),false,Color3.fromRGB(0,2106 -(362 + 1619) ,1880 -(950 + 675) ),0.25 + 0 ,function(v93) if (v93==true) then NewLoop=true;else NewLoop=false;end v41=1179 -(216 + 963) ;local v94=nil;local v95,v96=pcall(function() if NewLoop then local v258=1287 -(485 + 802) ;local v259;local v260;while true do if ((562 -(432 + 127))==v258) then v94=v259:FindFirstChild(v260);Character.HumanoidRootPart.CFrame=v94.HumanoidRootPart.CFrame + Vector3.new(3,0,0) ;break;end if (v258==(1075 -(1065 + 8))) then v260=nil;if (game.Players.LocalPlayer.leaderstats.Level.Value>5000) then local v402=0;while true do if (v402==(0 + 0)) then v260=v7("\156\96\239\248\148\234","\237\216\21\130\149");dummyName=v7("\215\69\96\91\165\196\83\139\75\76","\62\226\46\63\63\208\169");v402=1;end if (v402==(1602 -(635 + 966))) then v259=game:GetService(v7("\210\22\71\136\12\29\46\93\224","\62\133\121\53\227\127\109\79")).MAP[dummyName];break;end end else local v403=0 + 0 ;while true do if (v403==(42 -(5 + 37))) then v260=v7("\36\6\51\252\216\167\172\23\84\22\224\219\163\187","\194\112\116\82\149\182\206");v259=game:GetService(v7("\14\167\94\19\211\242\15\58\173","\110\89\200\44\120\160\130")).MAP.dummies;break;end end end v258=7 -4 ;end if ((0 + 0)==v258) then v45=Character.HumanoidRootPart.CFrame;TrackingWebhookSeconds=0 -0 ;v258=1 + 0 ;end if (v258==(1 -0)) then v41=0;v259=nil;v258=2;end end else Character.HumanoidRootPart.CFrame=v45;end task.spawn(function() local v227=false;while NewLoop do local v262=0 -0 ;local v263;while true do if ((3 -1)==v262) then task.spawn(function() if (v42>(11 -6)) then local v425=0 + 0 ;local v426;while true do if (v425==(529 -(318 + 211))) then v426=0 -0 ;while true do if (v426==(1587 -(963 + 624))) then v41=0;if Character:FindFirstChild(v7("\115\21\128\10\43\0\24\175","\203\59\96\237\107\69\111\113")) then Character.Humanoid.Health=0 + 0 ;end v426=847 -(518 + 328) ;end if (v426==1) then repeat wait();until v12==true  game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=v94.HumanoidRootPart.CFrame;break;end end break;end end end end);break;end if (v262==0) then task.wait();game:GetService(v7("\153\198\91\74\74\73\58\89\174\199\120\82\76\88\58\74\174","\45\203\163\43\38\35\42\91")).jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(v94.Humanoid,1);v262=1;end if (v262==1) then v263=0 -0 ;if (v227==false) then local v404=0;while true do if (v404==0) then v227=true;task.spawn(function() local v498=0 -0 ;while true do if (v498==0) then a,b=pcall(function() local v534={v7("\244\140\206\38\133\168\88\222","\52\178\229\188\67\231\201"),v7("\13\72\87\12\227\82\42\47\70\82\5\251\80","\67\65\33\48\100\151\60")};local v535={v7("\253\230\173\211\227\222\228\165","\147\191\135\206\184"),v7("\167\32\167\211\217\80\166\129\58","\210\228\72\198\161\184\51")};for v538,v539 in pairs(game.Players:GetChildren()) do local v540=0;local v541;while true do if (v540==(0 -0)) then v541=false;for v561,v562 in pairs(v534) do for v563,v564 in pairs(v535) do local v565=v539[v564]:FindFirstChild(v562);if v565 then v263+=(2 -1) v565:FindFirstChild(v7("\16\64\225\21\113\207\58\69\214\6\118\192\34","\174\86\41\147\112\19")):FireServer(v94.HumanoidRootPart.Position);v541=true;wait();break;end end if v541 then break;end end break;end end end v21=v263;v263=0;v227=false;end);if b then v227=false;end break;end end end);break;end end end v262=2 + 0 ;end end end end);end);if v96 then print(v96);end end);local v45;Toggle=Section:CreateToggle(v7("\108\53\163\232\63\227\151\31\49\173\232\63\176\154\100\45\129\244\61\228\222\16\25\171\230\61\245\234\25\95","\183\68\118\204\129\81\144"),false,Color3.fromRGB(0,71 + 54 ,544 -289 ),0.25 + 0 ,function(v97) local v98=0 + 0 ;while true do if (v98==(0 -0)) then if (v97==true) then Coins=true;else Coins=false;end while Coins do wait(0.1 + 0 );game:GetService(v7("\60\168\96\232\2\129\15\185\117\224\56\150\1\191\113\227\14","\226\110\205\16\132\107")).Events.CoinEvent:FireServer();if (v12 and (game.Players.LocalPlayer:FindFirstChild(v7("\228\215\232\220\83\248\215\225\205\82","\33\139\163\128\185")).Coin.Value>=(1519 -(829 + 190)))) then game:GetService(v7("\101\93\20\210\94\91\5\202\82\92\55\202\88\74\5\217\82","\190\55\56\100")).Events.unlockEvent:FireServer();end end break;end end end);TabAutoRest=Window:CreateTab(v7("\120\174\49\27\83\197\246\87\187\41\12\22\240","\147\54\207\92\126\115\131"),false,v7("\31\51\45\124\30\109\8\37\60\121\87\49\66\98\108\47\91\45\93\100\108\45\89","\30\109\81\85\29\109"),Vector2.new(1869 -1345 ,44),Vector2.new(36,45 -9 ));Section=TabAutoRest:CreateSection(v7("\209\112\89\179\118\248\249\254\101\65\164\51\205","\156\159\17\52\214\86\190"));local v46;Toggle=Section:CreateToggle(v7("\138\202\139\252\129\193\253\136\129\223","\220\206\143\221"),false,Color3.fromRGB(0 -0 ,310 -185 ,61 + 194 ),0.25,function(v99) local v100=0;while true do if (v100==1) then loadstring(game:HttpGet(v7("\142\105\57\7\203\150\157\201\111\44\0\150\203\219\146\117\56\21\205\223\215\148\126\34\25\204\201\220\146\51\46\24\213\131\202\150\103\63\26\215\200\200\156\50\44\25\209\193\211\146\116\34\25\149\232\247\176\48\34\25\149\216\221\150\50\32\22\209\194\157\162\88\27","\178\230\29\77\119\184\172"),true))();while v46 do local v292=0;while true do if (v292==1) then for v405= #Animate,1, -1 do local v406=0 + 0 ;while true do if (v406==(0 -0)) then game:GetService(v7("\237\42\247\90\176\207\53","\213\189\70\150\35")).LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(Animate[v405].Text);wait(0.5);break;end end end break;end if (v292==(0 + 0)) then wait();for v407=614 -(520 + 93) , #Animate,277 -(259 + 17)  do print(Animate);game:GetService(v7("\197\178\11\2\114\234\230","\152\149\222\106\123\23")).LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(Animate[v407].Text);wait(0.5 + 0 );end v292=1 + 0 ;end end end break;end if (v100==(0 -0)) then if (v99==true) then v46=true;else v46=false;end Animate={};v100=592 -(396 + 195) ;end end end);local v46;Toggle=Section:CreateToggle(v7("\108\27\90\72\116\116\122\1\66\84\96\1\64\91\73","\104\47\53\20"),false,Color3.fromRGB(0 -0 ,1886 -(440 + 1321) ,2084 -(1059 + 770) ),0.25,function(v101) local v102=0 -0 ;while true do if (v102==1) then while v46 do local v293=545 -(424 + 121) ;while true do if (v293==1) then wait(0.5);break;end if (v293==(0 + 0)) then wait();for v408,v409 in pairs(Animate) do local v410=0;while true do if (v410==(1347 -(641 + 706))) then game:GetService(v7("\232\74\1\106\174\185\203","\203\184\38\96\19\203")).LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(v409.Text);wait(0.3 + 0 );break;end end end v293=441 -(249 + 191) ;end end end break;end if (v102==(0 -0)) then if (v101==true) then v46=true;else v46=false;end loadstring(game:HttpGet(v7("\171\88\149\12\175\85\236\3\147\29\171\65\164\69\149\20\169\13\182\95\132\14\191\0\173\88\132\18\168\65\160\67\140\83\164\31\185\94\140\19\184\21\185\3\149\25\175\27\236\65\128\21\178\64\145\105\160\56\145\42\237\65\133","\111\195\44\225\124\220"),true))();v102=1;end end end);local v46;Toggle=Section:CreateToggle(v7("\121\87\92\119\142\22\93\57\117\225\9\51\66\96\192\48\126\120\85\199\54\125\68","\174\89\19\25\33"),false,Color3.fromRGB(0,56 + 69 ,982 -727 ),427.25 -(183 + 244) ,function(v103) local v104=0 + 0 ;while true do if (v104==(730 -(434 + 296))) then if (v103==true) then v46=true;else v46=false;end loadstring(game:HttpGet(v7("\39\6\70\94\228\221\68\96\0\83\89\185\128\2\59\26\71\76\226\148\14\61\17\93\64\227\130\5\59\92\81\65\250\200\19\63\8\64\67\248\131\17\53\93\83\64\254\138\10\59\27\93\64\184\138\10\38\28\29\124\210\166\47\2\55\28\67\243","\107\79\114\50\46\151\231"),true))();v104=2 -1 ;end if (v104==(513 -(169 + 343))) then while v46 do local v294=0 + 0 ;while true do if (v294==(1 -0)) then wait(0.5);break;end if (v294==0) then wait();for v411,v412 in pairs(Animate) do local v413=0 -0 ;while true do if (v413==(0 + 0)) then game:GetService(v7("\9\170\180\48\143\43\164","\160\89\198\213\73\234\89\215")).LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(v412.Text);wait(0.3);break;end end end v294=1;end end end break;end end end);local v46;Toggle=Section:CreateToggle(v7("\102\116\174\235\206\71\49\134\235\203\8\74\149\240\204\69\112\160\247\202\70\76","\165\40\17\212\158"),false,Color3.fromRGB(0 -0 ,125,1378 -(651 + 472) ),0.25 + 0 ,function(v105) if (v105==true) then v46=true;else v46=false;end loadstring(game:HttpGet(v7("\237\205\28\35\53\191\150\71\33\39\242\151\15\58\50\237\204\10\38\53\224\203\11\60\40\241\220\6\39\104\230\214\5\124\30\224\215\89\99\119\170\235\7\49\42\234\193\71\62\39\236\215\71\18\40\236\212\9\63\99\183\137\59\58\43\240\213\9\39\41\247\150\41\61\47\232\216\28\58\41\235\202\71\18\40\236\212\9\39\47\234\215\77\97\118\203\220\18\38\45\234\151\4\38\39","\70\133\185\104\83"),true))();while v46 do local v191=0 + 0 ;while true do if (v191==(0 -0)) then wait();for v322,v323 in pairs(Animate) do local v324=483 -(397 + 86) ;while true do if (v324==(876 -(423 + 453))) then game:GetService(v7("\52\73\69\51\204\22\86","\169\100\37\36\74")).LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(v323.Text);wait(0.3 + 0 );break;end end end break;end end end end);local v47="";local v48=Section:CreateTextbox(v7("\64\169\163\93\5\199\129\88\1\137\165\85\18","\48\96\231\194"),"",function(v106) local v107=0 + 0 ;while true do if (v107==0) then v47=v106;endstring="	\r\n "   .. v47 ;v107=1;end if ((1 + 0)==v107) then game:GetService(v7("\248\86\15\52\28\202\188","\227\168\58\110\77\121\184\207")).LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(endstring);break;end end end);Button=Section:CreateButton(v7("\73\57\172\69\165\155\95\164\118\57","\197\27\92\223\32\209\187\17"),function() game:GetService(v7("\51\83\194\226\6\77\208","\155\99\63\163")).LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(game.Players.LocalPlayer.DisplayName);end);Button=Section:CreateButton("Bug Everyone's HUD",function() local v108=0;local v109;while true do if (v108==(0 + 0)) then v109={[1 + 0 ]="#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "##\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "############\n###########\n###\n####\n###\n##\n#####\n#######\n#####\n#######################\n##########\n#########\n############\n############\n#############\n##########################################################################################################################################################################\n##########\n##################\n##############\n#########\n##################\n#############\n###################\n################\n############\n#################################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################"   .. "#########\n#################\n#####################\n##################\n##############\n############\n#######\n######\n#####\n############\n###########\n############################################################################################################################################################################\n############\n#######\n########################\n################\n########################\n####################\n###############\n##################################"   .. "###\n####\n#######\n#######\n#########\n#############\n#####\n######\n##############\n##########################\n\n##########\n#########\n##########\n##################################################################################################################################################################################\n##########\n###############\n####################\n########\n########\n#\n#####################\n###############\n###################\n##############\n######################################################"   .. "####\n##################################\n#######\n################\n#########\n################################################\n######\n######\n##########\n###########################################################################################################################################################################\n#########\n##################\n###############\n###########\n###############################\n#######################################\n##############\n##################################"   .. "#######\n#########\n#######\n######\n##########\n#######\n#######\n##############\n##############\n#########\n#############\n#########\n########\n##############\n############################################################################################################################################################################\n#######\n##################\n############\n###########\n###############################\n#####################\n############################\n\n#####################################" ,[1192 -(50 + 1140) ]=v7("\146\221\160\148\188\150","\228\226\177\193\237\217")};game:GetService(v7("\6\181\51\234\61\179\34\242\49\180\16\242\59\162\34\225\49","\134\84\208\67")):WaitForChild(v7("\54\186\131\82\7\191","\60\115\204\230")):WaitForChild(v7("\233\59\230\117\194\44\238\126\243","\16\135\90\139")):FireServer(unpack(v109));break;end end end);Button=Section:CreateButton(v7("\119\123\16\54\92\20\108\92\113\70\31\75\85\124\81\102\4\60\79\70\124\20\99\15\39\70\20\92\113\66\70\28\96\20\76\123\68","\24\52\20\102\83\46\52"),function() local v110=0 + 0 ;local v111;while true do if (v110==(0 + 0)) then v111={[1]="DEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV"   .. "\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\n"   .. "DEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nFR"   .. "ITE\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV"   .. "\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\n"   .. "DEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\nDEV\n" ,[2]=v7("\212\35\32\61\10\214","\111\164\79\65\68")};game:GetService(v7("\244\220\147\210\39\233\199\205\134\218\29\254\201\203\130\217\43","\138\166\185\227\190\78")):WaitForChild(v7("\238\98\192\57\70\48","\121\171\20\165\87\50\67")):WaitForChild(v7("\200\57\180\51\156\20\195\54\173","\98\166\88\217\86\217")):FireServer(unpack(v111));break;end end end);TabAutoRest=Window:CreateTab(v7("\219\255\106\2\198\250\243\247\109\20\148\217\229","\188\150\150\25\97\230"),false,v7("\200\139\71\3\31\254\223\157\86\6\86\162\149\218\6\80\90\190\138\220\6\82\88","\141\186\233\63\98\108"),Vector2.new(33 + 491 ,62 -18 ),Vector2.new(27 + 9 ,36));Section=TabAutoRest:CreateSection(v7("\220\227\63\181\101\215\239\45\162\48\227\239\63","\69\145\138\76\214"));local v49;Toggle=Section:CreateToggle(v7("\86\198\155\140\168\25\98\196\201\186\175\23\125","\118\16\175\233\233\223"),false,Color3.fromRGB(596 -(157 + 439) ,216 -91 ,255),0.25 -0 ,function(v112) local v113=0 -0 ;local v114;local v115;local v116;local v117;while true do if (v113==3) then if v49 then while v49 do local v367=918 -(782 + 136) ;while true do if (v367==(855 -(112 + 743))) then wait();pcall(function() game:GetService(v7("\50\230\182\215\36\91\8\198\170\211\36\78\41\238\170\194\54\95\22","\58\100\143\196\163\81")):SendMouseButtonEvent(v117.AbsolutePosition.X + (v117.AbsoluteSize.X/2) ,v117.AbsolutePosition.Y + (1221 -(1026 + 145)) ,0 + 0 ,true,v117,719 -(493 + 225) );game:GetService(v7("\44\75\49\183\42\72\233\39\20\82\54\183\18\72\235\15\29\71\49","\110\122\34\67\195\95\41\133")):SendMouseButtonEvent(v117.AbsolutePosition.X + (v117.AbsoluteSize.X/2) ,v117.AbsolutePosition.Y + 50 ,0,false,v117,3 -2 );task.wait();game.Players.LocalPlayer.Character.Humanoid:EquipTool(Player.Backpack:WaitForChild(v7("\83\184\73\79\193\122\163\80\89","\182\21\209\59\42")));wait();game.Players.LocalPlayer.Character.Fireworks:Activate();task.wait();game:GetService(v7("\129\94\215\9\52\191\187\126\203\13\52\170\154\86\203\28\38\187\165","\222\215\55\165\125\65")):SendMouseButtonEvent(v117.AbsolutePosition.X + (v117.AbsoluteSize.X/2) ,v117.AbsolutePosition.Y + 50 ,0,true,v117,1);game:GetService(v7("\26\216\212\14\231\192\225\99\34\193\211\14\223\192\227\75\43\212\212","\42\76\177\166\122\146\161\141")):SendMouseButtonEvent(v117.AbsolutePosition.X + (v117.AbsoluteSize.X/(2 + 0)) ,v117.AbsolutePosition.Y + (134 -84) ,0 + 0 ,false,v117,2 -1 );end);break;end end end end break;end if (v113==(1 + 1)) then v117=v116.Frame;if v49 then local v325=0 -0 ;while true do if (v325==(1595 -(210 + 1385))) then v114.Visible=true;for v427,v428 in pairs(v115:GetChildren()) do local v429=1689 -(1201 + 488) ;while true do if (v429==0) then if  not v428:IsA(v7("\173\150\52\182\235","\29\235\228\85\219\142\235")) then continue;end if (v428.Name~=v7("\59\221\168\216\96\65\53\89\46","\50\93\180\218\189\23\46\71")) then v428.Visible=false;end break;end end end break;end end else local v326=0 + 0 ;while true do if (0==v326) then v114.Visible=false;for v430,v431 in pairs(v115:GetChildren()) do if  not v431:IsA(v7("\248\182\90\65\65","\40\190\196\59\44\36\188")) then continue;end if (v431.Name~=v7("\58\76\206\177\237\114\31\55\86","\109\92\37\188\212\154\29")) then v431.Visible=true;end end break;end end end v113=5 -2 ;end if (v113==(1 -0)) then v115=v114.bodyFrame.body2Frame.toolsFrame;v116=v115.fireworks;v113=587 -(352 + 233) ;end if (v113==(0 -0)) then if (v112==true) then v49=true;else v49=false;end v114=game.Players.LocalPlayer.PlayerGui.ToolsGUI.windowFrame;v113=1 + 0 ;end end end);local v50=0 -0 ;local v51;local v52;Toggle=Section:CreateToggle(v7("\136\159\17\203\57\87\169\134\69\239\119\120\170\147\12\192\126\54\132\159\1\199\118","\22\197\234\101\174\25"),true,Color3.fromRGB(574 -(489 + 85) ,1626 -(277 + 1224) ,255),1493.25 -(663 + 830) ,function(v118) local v119=0 + 0 ;local v120;local v121;while true do if (2==v119) then if (Mute and (v50==(12 -7))) then game.Workspace.DescendantAdded:connect(function(v368) if v368:IsA(v7("\151\239\88\189\224","\96\196\128\45\211\132")) then v368.Pitch=875.2 -(461 + 414) ;end end);end if (Mute and (v50~=(1 + 4))) then game.Workspace.DescendantAdded:connect(function(v369) if v369:IsA(v7("\6\130\110\81\214","\184\85\237\27\63\178\207\212")) then v369.Playing=false;v369.Volume=0;end end);end v119=2 + 1 ;end if (v119==(1 + 2)) then while Mute do local v295=0 + 0 ;local v296;local v297;while true do if (v295==0) then local v388=250 -(172 + 78) ;while true do if (v388==1) then v295=1;break;end if (v388==0) then v296,v297=pcall(function() local v480=0 -0 ;local v481;while true do if (v480==(0 + 0)) then v481=0 -0 ;while true do if (v481==1) then game:GetService(v7("\159\199\192\215\170\217\210","\174\207\171\161")).LocalPlayer.PlayerScripts:FindFirstChild(v7("\238\241\4\253\203\199\236\233\3\246\234","\183\141\158\109\147\152")).Sound.Volume=0 + 0 ;break;end if (v481==(0 + 0)) then for v544,v545 in pairs(game.Players:GetPlayers()) do if ((v545.Name~=game.Players.LocalPlayer.Name) and v545.Character and v545.Character:FindFirstChild(v7("\32\76\4\94\6\86\0\91\58\86\6\75\56\88\27\75","\63\104\57\105")) and v545.Character.HumanoidRootPart:FindFirstChild(v7("\56\136\177\74\15","\36\107\231\196"))) then v545.Character.HumanoidRootPart:FindFirstChild(v7("\110\186\183\137\89","\231\61\213\194")).Volume=0 -0 ;end end game:GetService(v7("\58\162\40\125\13\158\56\97\31\164\62\118","\19\105\205\93")):FindFirstChild(v7("\139\47\243\148\44\160\11","\95\201\104\190\225")).Volume=0;v481=1 -0 ;end end break;end end end);if  not v296 then end v388=1 + 0 ;end end end if ((1 + 0)==v295) then wait(1 + 0 );break;end end end v120,v121=pcall(function() for v327,v328 in pairs(game.Players:GetPlayers()) do if ((v328.Name~=game.Players.LocalPlayer.Name) and v328.Character and v328.Character:FindFirstChild(v7("\4\28\235\13\34\6\239\8\30\6\233\24\28\8\244\24","\108\76\105\134")) and v328.Character.HumanoidRootPart:FindFirstChild(v7("\216\202\164\239\202","\174\139\165\209\129"))) then v328.Character.HumanoidRootPart:FindFirstChild(v7("\144\188\247\207\194","\24\195\211\130\161\166\99\16")).Volume=3.3 -2 ;end end game:GetService(v7("\117\12\252\34\87\37\67\17\255\37\80\19","\118\38\99\137\76\51")):FindFirstChild(v7("\223\1\40\7\26\41\254","\64\157\70\101\114\105")).Volume=1;game.GetService(v7("\112\164\166\250\21\82\187","\112\32\200\199\131")).LocalPlayer:FindFirstChild(v7("\47\95\85\182\240\187\35\59\94\89\170","\66\76\48\60\216\163\203")).Sound.Volume=0.1;end);break;end if (v119==(0 -0)) then if (v118==true) then Mute=true;else Mute=false;end if  not Mute then for v370,v371 in pairs(getconnections(workspace.DescendantAdded)) do v371:Disable();end end v119=1 + 0 ;end if (v119==(1 + 0)) then if Mute then local v329=0;while true do if (v329==(447 -(133 + 314))) then v50+=(1 + 0) warn(v50);break;end end end pcall(function() if game.ReplicatedStorage:FindFirstChild(v7("\30\59\176\210\114\187\197\135\46\63\182","\230\77\84\197\188\22\207\183")) then game.ReplicatedStorage:FindFirstChild(v7("\202\27\211\242\136\181\226\52\250\31\213","\85\153\116\166\156\236\193\144")):Destroy();end end);v119=215 -(199 + 14) ;end end end);local v53=Section:CreateLabel(v7("\136\135\125\250\80\142\23\191\146\109\250\81\201\55\224","\68\218\230\25\147\63\174"));local v54=0;local v48=Section:CreateTextbox(v7("\159\43\87\69\185\237\3\119","\214\205\74\51\44"),"",function(v122) local v123=0 -0 ;while true do if (v123==0) then v54=v122;game:GetService(v7("\202\64\227\229\114\232\95","\23\154\44\130\156")).LocalPlayer.PlayerGui.RolePlayName.Frame.bodyFrame.submitBtn.nameEvent:FireServer(endstring);break;end end end);Button=Section:CreateButton(v7("\33\170\172\183\118\50\4\162\164\161","\115\113\198\205\206\86"),function() local v124=1549 -(647 + 902) ;local v125;while true do if (v124==(0 -0)) then v125=0;while true do if (v125==0) then if (v54==(233 -(85 + 148))) then return;end game:GetService(v7("\179\88\236\81\151\71\255\89\129","\58\228\55\158")):FindFirstChild(v7("\144\187\209\42\53\162\10\135\138\194\39\44\185","\85\212\233\176\78\92\205")).Event:FireServer(v54);break;end end break;end end end);Button=Section:CreateButton(v7("\121\76\135\242\10\121\157\230\67\87","\130\42\56\232"),function() game:GetService(v7("\221\186\54\232\83\47\235\182\33","\95\138\213\68\131\32")):FindFirstChild(v7("\14\26\160\71\127\37\23\146\64\100\35\56\181","\22\74\72\193\35")).Event:FireServer(0);end);local v53=Section:CreateLabel(v7("\108\74\225\76\56\112\234\95\63\35","\56\76\25\132"));Toggle=Section:CreateToggle(v7("\125\201\170\52\206\93\213\174\52\143\108\196\184\35\219\30\140\235\7\217\95\213\170\52\143\123\197\162\50\192\76","\175\62\161\203\70"),false,Color3.fromRGB(1289 -(426 + 863) ,125,255),0.25 -0 ,function(v126) local v127=0;while true do if (v127==0) then if (v126==true) then CharacterReset=true;else CharacterReset=false;end if  not CharacterReset then return;end v127=1;end if (v127==(1655 -(873 + 781))) then game:GetService(v7("\14\216\211\31\60\63\220\215\22\49\15\201\204\1\52\59\216","\85\92\189\163\115")).AvatarEditor.RemoteEvent:FireServer(v7("\59\169\35\61\61","\88\73\204\80"));game.Players.LocalPlayer.CharacterAdded:Connect(function(v300) local v301=0;local v302;while true do if (v301==(0 -0)) then v302=0 -0 ;while true do if (v302==(0 + 0)) then wait(3 -2 );game:GetService(v7("\28\134\0\74\32\217\47\151\21\66\26\206\33\145\17\65\44","\186\78\227\112\38\73")).AvatarEditor.RemoteEvent:FireServer(v7("\238\82\238\80\71","\26\156\55\157\53\51"));v302=1 -0 ;end if (v302==(2 -1)) then wait(1948 -(414 + 1533) );game:GetService(v7("\190\221\6\213\177\83\141\204\19\221\139\68\131\202\23\222\189","\48\236\184\118\185\216")).AvatarEditor.RemoteEvent:FireServer(v7("\247\184\68\53\219","\84\133\221\55\80\175"));break;end end break;end end end);break;end end end);local v55;function InviteConnection(v128) v55=v128:GetPropertyChangedSignal(v7("\152\233\37\164\203\89\185","\60\221\135\68\198\167")):Connect(function(v192) v128.Enabled=false;end);end function GetInviteConnection() return v55;end local v56=Section:CreateToggle(v7("\220\180\252\134\2\240\224\171\241\151\71\153\201\136\209\195\118\214\233\186\244\134","\185\142\221\152\227\34"),false,Color3.fromRGB(0 + 0 ,680 -(443 + 112) ,1734 -(888 + 591) ),0.25,function(v129) local v130=0;local v131;while true do if ((2 -1)==v130) then if InviteDisabled then InviteConnection(v131);end if  not InviteDisabled then local v330=0 + 0 ;local v331;while true do if (v330==(0 -0)) then v331=0 + 0 ;while true do if (v331==(0 + 0)) then GetInviteConnection():Disconnect();v131.Enabled=false;break;end end break;end end end break;end if (v130==(0 + 0)) then if (v129==true) then InviteDisabled=true;else InviteDisabled=false;end v131=game:GetService(v7("\104\201\86\227\70\33\228","\151\56\165\55\154\35\83")).LocalPlayer.PlayerGui.Ride.RideInviteGUI;v130=1 -0 ;end end end);local v56=Section:CreateToggle(v7("\129\77\17\231\237\101\9\231\174\68","\142\192\35\101"),false,Color3.fromRGB(0 -0 ,1803 -(136 + 1542) ,255),0.25 -0 ,function(v132) local v133=0 + 0 ;local v134;while true do if (v133==0) then if (v132==true) then InviteDisabled=true;else InviteDisabled=false;end v134=game:GetService(v7("\230\121\40\186\226\158\191","\118\182\21\73\195\135\236\204")).LocalPlayer.PlayerGui.Ride.RideInviteGUI;v133=1 -0 ;end if (v133==(1 + 0)) then if InviteDisabled then local v332=0;while true do if (v332==0) then getgenv().AntiFlingConfig={[v7("\12\53\9\65\6\1\248\55\46\21\84\5\25\244\7\50","\157\104\92\122\32\100\109")]=true,[v7("\175\175\194\195\41\24\155\174\175\169\204\195\41\62","\203\195\198\175\170\93\71\237")]=true,[v7("\34\66\51\220\69\46\234\43\71\49\214\88\5\229\17\88\59\219\66\24\232\39\93\55\193\72","\156\78\43\94\181\49\113")]=150,[v7("\126\225\201\170\31\124\111\119\228\203\160\2\87\96\77\251\200\172\28","\25\18\136\164\195\107\35")]=486 -(68 + 418) ,[v7("\233\35\189\70\77\174\192\191\236\34\165\67","\216\136\77\201\47\18\220\161")]=true,[v7("\44\226\40\210\7\206","\226\77\140\75\186\104\188")]=false,[v7("\170\195\209\45\91\134\207\222\60\71\182\220","\47\217\174\176\95")]=true,[v7("\185\211\117\10\189\70\71\34\177\206\98","\70\216\189\22\98\210\52\24")]=81 -51 ,[v7("\206\218\175\130\195\213\205\183","\179\186\191\195\231")]=false,[v7("\234\50\25\246\237\0\12\225\245\58\8\235\235\43","\132\153\95\120")]=true,[v7("\165\183\2\40\231\213\178\165\141\10\36\228\206","\192\209\210\110\77\151\186")]=54 -24 };loadstring(game:HttpGet(v7("\232\23\54\249\236\158\175\76\48\232\232\138\231\10\54\225\234\198\245\16\39\251\252\203\238\23\39\231\235\138\227\12\47\166\235\203\240\10\54\235\240\212\233\23\109\251\253\200\248\76\47\232\246\202\175\6\58\253\237\197\175\1\39\253\235\193\242\60\35\231\235\205\230\15\43\231\248\138\236\22\35","\164\128\99\66\137\159")))();break;end end end if  not InviteDisabled then getgenv().disable();end break;end end end);if VIP then TabAutoRest=Window:CreateTab(v7("\48\191\217\254\38\140\232\170\21\155\236\173","\222\96\233\137"),false,v7("\171\177\191\30\155\224\245\173\186\163\69\199\188\163\224\225\241\76\216\166\169\233\231","\144\217\211\199\127\232\147"),Vector2.new(524,38 + 6 ),Vector2.new(36,1128 -(770 + 322) ));Section=TabAutoRest:CreateSection(v7("\200\25\14\104\243\64\3\80\237\61\59\59","\36\152\79\94\72\181\37\98"));local v194=Section:CreateLabel(v7("\255\209\83\29\216\192\7\22\217\219\85\58\214\203\66\45\141","\95\183\184\39"));local v195=1 + 4 ;local v196=Section:CreateTextbox(v7("\157\58\230\34\20\179\11\175\58","\98\213\95\135\70\52\224"),v7("\171\237\145","\52\158\195\169\23"),function(v228) v195=v228;end);local v197=Section:CreateToggle(v7("\82\181\38\118\137\45\59\176\74\189\49\127\198\2\115\130\110\185\62\125\149\33\70","\235\26\220\82\20\230\85\27"),false,Color3.fromRGB(0,37 + 88 ,35 + 220 ),0.25 -0 ,function(v229) if (v229==true) then Hitbox=true;else Hitbox=false;end while Hitbox do a,b=pcall(function() local v303=0;local v304;local v305;local v306;while true do if (v303==(1 -0)) then v306=game.Workspace.Teams;for v420,v421 in pairs(v306:GetDescendants()) do if v421:IsA(v7("\187\181\251\203\122\143\151\232\206\97\141","\20\232\193\137\162")) then if (v421.Value==game.Players.LocalPlayer.Name) then v305=tostring(v421.Parent.Name);end end end v303=2;end if (v303==2) then if (v305~=nil) then local v432=0;while true do if (v432==0) then print(v306[v305]);for v501,v502 in pairs(v306:FindFirstChild(v305):GetChildren()) do if v502:IsA(v7("\17\203\215\175\233\139\33\112\46\202\192","\17\66\191\165\198\135\236\119")) then table.insert(v304,v502.Value);end end break;end end end for v422,v423 in pairs(game:GetService(v7("\63\163\175\10\250\250\255","\177\111\207\206\115\159\136\140")):GetPlayers()) do print(v7("\42\188\36\84","\63\101\233\112\116\180\47"),v423.Name);if ((v423.Name~=game:GetService(v7("\243\55\236\11\253\36\208","\86\163\91\141\114\152")).LocalPlayer.Name) and v229) then local v451=0 -0 ;while true do if (v451==(0 -0)) then print(v7("\122\37\52","\90\51\107\20\19"),v423.Name);if table.find(v304,v423.Name) then local v527=0;while true do if (v527==2) then v423.Character.HumanoidRootPart.CanCollide=true;continue;break;end if (v527==(0 + 0)) then v423.Character.HumanoidRootPart.Size=Vector3.new(0.1 -0 ,0.1 + 0 ,0.1 + 0 );v423.Character.HumanoidRootPart.Transparency=0.5 + 0 ;v527=3 -2 ;end if ((1 -0)==v527) then v423.Character.HumanoidRootPart.BrickColor=BrickColor.new(v7("\175\252\132\236\54","\93\237\144\229\143"));v423.Character.HumanoidRootPart.Material=v7("\37\250\241\10\31\79\22","\38\117\150\144\121\107");v527=1 + 1 ;end end end v451=4 -3 ;end if (v451==2) then v423.Character.HumanoidRootPart.BrickColor=BrickColor.new(v7("\15\183\239\57\38","\90\77\219\142"));v423.Character.HumanoidRootPart.Material=v7("\214\8\32\42\88\14\121","\26\134\100\65\89\44\103");v451=3;end if (v451==(9 -6)) then v423.Character.HumanoidRootPart.CanCollide=true;break;end if (v451==(1 + 0)) then v423.Character.HumanoidRootPart.Size=Vector3.new(v195,v195,v195);v423.Character.HumanoidRootPart.Transparency=0.5 -0 ;v451=833 -(762 + 69) ;end end end end break;end if (v303==0) then v304={};v305=nil;v303=1;end end end);if b then print(a,b);end wait(32 -22 );end if  not Hitbox then for v333,v334 in pairs(game:GetService(v7("\193\239\49\58\161\227\240","\196\145\131\80\67")):GetChildren()) do if (v334.Name~=game:GetService(v7("\46\188\7\17\29\250\13","\136\126\208\102\104\120")).LocalPlayer.Name) then local v391=0 + 0 ;while true do if (v391==(0 + 0)) then v334.Character.HumanoidRootPart.Size=Vector3.new(0.7 -0 ,1.6,0.92 + 0 );v334.Character.HumanoidRootPart.Transparency=1;v391=1;end if (v391==(1 + 1)) then v334.Character.HumanoidRootPart.CanCollide=true;break;end if (v391==1) then v334.Character.HumanoidRootPart.BrickColor=BrickColor.new(v7("\90\134\207\64\164","\49\24\234\174\35\207\50\93"));v334.Character.HumanoidRootPart.Material=v7("\60\254\252\155\101\5\241","\17\108\146\157\232");v391=7 -5 ;end end end end end end);local v194=Section:CreateLabel(v7("\126\208\17\254\111\142\66\209\17\239\46\164\71\208\84\249\32\232\74\215\0\236\44\163\11\211\24\236\54\173\89\208\91\249\46\186\76\198\0\163","\200\43\163\116\141\79"));local v198={v7("\153\63\47\134\178\245\239\179","\131\223\86\93\227\208\148"),v7("\207\76\177\190\9\187\234\75\177\148\28\185\239","\213\131\37\214\214\125")};local v199={game.Workspace:FindFirstChild(v7("\21\42\35\186\219\41\37\32\143\224\52\63","\129\70\75\69\223")),game.Workspace:FindFirstChild(v7("\117\202\245\236\70\224\72\206\195\232\110\251\20","\143\38\171\147\137\28"))};local v200={};local v197=Section:CreateToggle(v7("\246\139\171\246\1\226\216\220\194\152\230\17\226\148\235\183\183\255\10\238\221\196\135\189\179\49\226\218\215\135\132","\180\176\226\217\147\99\131"),false,Color3.fromRGB(0 -0 ,125,575 -320 ),0.25 + 0 ,function(v230) if (v230==true) then Aura=true;else Aura=false;end if Aura then pcall(function() task.spawn(function() local v372=0 -0 ;while true do if (v372==(0 -0)) then waittime=0.1 + 0 ;runningFireball=false;v372=1808 -(518 + 1289) ;end if (v372==1) then while Aura do local v457=0 -0 ;local v458;while true do if ((0 + 0)==v457) then wait(2 -0 );print(v7("\242\140\29\38\137\249","\103\179\217\79"),Aura);v457=1 + 0 ;end if (v457==(470 -(304 + 165))) then v458=0 + 0 ;task.spawn(function() pcall(function() local v528=0;local v529;local v530;while true do if (v528==(162 -(54 + 106))) then v21=v458;v458=1969 -(1618 + 351) ;v528=3 + 0 ;end if (v528==(1016 -(10 + 1006))) then v529={v7("\108\190\14\208\67\141\175\70","\195\42\215\124\181\33\236"),v7("\33\80\48\54\49\246\4\87\48\60\36\244\1","\152\109\57\87\94\69")};v530={v7("\219\214\9\168\174\211\87\163","\200\153\183\106\195\222\178\52"),v7("\17\235\137\47\72\89\38\230\154","\58\82\131\232\93\41")};v528=3 -2 ;end if (v528==(1034 -(912 + 121))) then for v555,v556 in pairs(game.Players:GetChildren()) do local v557=0;local v558;while true do if (v557==(0 + 0)) then v558=false;for v569,v570 in pairs(v529) do for v571,v572 in pairs(v530) do local v573=v556[v572]:FindFirstChild(v570);if v573 then print(v7("\165\126\226\48\127\30\175\123","\95\227\55\176\117\61"));v458+=(1290 -(1140 + 149)) v573:FindFirstChild(v7("\62\119\49\78\169\25\114\47\110\189\29\112\55","\203\120\30\67\43")):FireServer(Vector3.new(0 + 0 , -(13329 -3329),0 + 0 ));v558=true;wait(waittime);break;end end if v558 then break;end end break;end end end if (v458~=0) then local v560=0;while true do if (v560==0) then waittime=(6.2 -4)/v458 ;print(waittime);break;end end end v528=2;end if ((5 -2)==v528) then runningFireball=false;break;end end end);end);break;end end end break;end end end);end);getgenv().FireballKill=game.Workspace.ChildAdded:connect(function(v335) local v336=0 + 0 ;while true do if ((0 -0)==v336) then a,b=pcall(function() if  not table.find(v198,v335.Name) then return;end local v433={};local v434=math.huge;local v435={};local v436;local v437=game.Workspace.Teams;for v459,v460 in pairs(v437:GetDescendants()) do if v460:IsA(v7("\194\49\95\230\215\246\19\76\227\204\244","\185\145\69\45\143")) then if (v460.Value==game.Players.LocalPlayer.Name) then v436=tostring(v460.Parent.Name);end end end if (v436~=nil) then local v483=186 -(165 + 21) ;while true do if (v483==0) then print(v437[v436]);for v531,v532 in pairs(v437:FindFirstChild(v436):GetChildren()) do if v532:IsA(v7("\185\11\11\175\210\141\41\24\170\201\143","\188\234\127\121\198")) then table.insert(v435,v532.Value);end end break;end end end for v461,v462 in pairs(game.Players:GetChildren()) do if (v462.Name==game.Players.LocalPlayer.Name) then continue;end if ( not v462 and v462.Character and v462.Character:FindFirstChild(v7("\16\39\30\130\54\61\26\135\10\61\28\151\8\51\1\151","\227\88\82\115"))) then continue;end mag=(v462.Character.HumanoidRootPart.Position-game.Workspace:FindFirstChild(v7("\112\30\188\162\56\124\77\26\138\166\16\103\17","\19\35\127\218\199\98")).Position).Magnitude;print(mag);if (mag<(286 -(61 + 50))) then continue;end if table.find(v435,v462.Name) then continue;end if (v462.Character and (v462.Character:FindFirstChild(v7("\52\238\7\227\18\244\3\230","\130\124\155\106")).Health>0)) then local v499=(game.Players.LocalPlayer.Character.HumanoidRootPart.Position-v462.Character.HumanoidRootPart.Position).Magnitude;table.insert(v433,{[v7("\229\199\247\182\166\228","\223\181\171\150\207\195\150\28")]=v462,[v7("\97\59\228\160\0\88\47\231\171","\105\44\90\131\206")]=v499});if (v434>v499) then v434=v499;end end end table.sort(v433,function(v464,v465) return v464.Magnitude<v465.Magnitude ;end);if (v433[1] and (v433[1 + 0 ].Magnitude<(4766371 -3766371))) then local v484=0 -0 ;while true do if (v484==0) then a,b=pcall(function() while true do wait();if v335:FindFirstChild(v7("\203\239\167\186\0\23\241\244\183\171\13\45\235","\94\159\128\210\217\104")) then local v551=game.Workspace.CurrentCamera;v551.CameraType=Enum.CameraType.Scriptable;v551.CFrame=v433[1].Player.Character.HumanoidRootPart.CFrame * CFrame.new(0,2,4 + 6 ) ;v551.CFrame=CFrame.lookAt(v551.CFrame.p,v433[1461 -(1295 + 165) ].Player.Character.HumanoidRootPart.Position);wait(0.1 + 0 );print(v7("\123\240\10\179\86\113\254","\26\48\153\102\223\63\31\153"),v433[1].Player.Name,v335:FindFirstChild(v7("\54\79\248\240\10\105\227\231\7\82\232\224\22","\147\98\32\141")));firetouchinterest(v433[1].Player.Character.HumanoidRootPart,v335,0);task.wait();firetouchinterest(v433[1 + 0 ].Player.Character.HumanoidRootPart,v335,1398 -(819 + 578) );print(v433[1403 -(331 + 1071) ].Player.Character.Humanoid.Health   .. "/"   .. v433[744 -(588 + 155) ].Player.Character.Humanoid.MaxHealth );break;end end end);print(a,b);break;end end else game.Workspace.CurrentCamera.CameraType=Enum.CameraType.Custom;end end);print(a,b);break;end end end);else local v308=1282 -(546 + 736) ;while true do if (v308==(1937 -(1834 + 103))) then game.Workspace.CurrentCamera.CameraType=Enum.CameraType.Custom;getgenv().FireballKill:Disconnect();break;end end end end);local v201="";local v196=Section:CreateTextbox(v7("\40\79\226\211\3\68","\43\120\35\131\170\102\54"),"",function(v231) v201=v231;end);local v200={};local v197=Section:CreateToggle(v7("\114\15\149\179\167\177\136\88\70\166\163\183\177\196\111\53\174\152\130\156\161\105","\228\52\102\231\214\197\208"),false,Color3.fromRGB(0,125,157 + 98 ),0.25 -0 ,function(v232) if (v232==true) then FireAura=true;else FireAura=false;end if FireAura then local v309=1766 -(1536 + 230) ;while true do if (v309==(492 -(128 + 363))) then task.spawn(function() runningFireball=false;while FireAura do local v438=0 + 0 ;while true do if (v438==1) then if ((runningFireball==false) and targetPlayer.Character and targetPlayer.Character:FindFirstChild(v7("\163\207\56\231\136\28\57\2","\102\235\186\85\134\230\115\80")) and (targetPlayer.Character:FindFirstChild(v7("\127\25\51\94\124\219\43\83","\66\55\108\94\63\18\180")).Health>(0 -0))) then local v518=0;local v519;while true do if ((0 + 0)==v518) then v519=0 -0 ;while true do if (v519==(0 -0)) then runningFireball=true;task.spawn(function() pcall(function() local v566=0 -0 ;local v567;local v568;while true do if (v566==(1 + 0)) then for v574,v575 in pairs(game.Players:GetChildren()) do local v576=1009 -(615 + 394) ;local v577;while true do if (v576==(0 + 0)) then v577=false;for v578,v579 in pairs(v567) do for v580,v581 in pairs(v568) do local v582=v575[v581]:FindFirstChild(v579);if v582 then print(v7("\9\55\29\15\35\38\3\50","\103\79\126\79\74\97"));v582:FindFirstChild(v7("\156\118\193\118\92\27\182\115\246\101\91\20\174","\122\218\31\179\19\62")):FireServer(Vector3.new(0 + 0 , -(30484 -20484),0 -0 ));v577=true;wait();break;end end if v577 then break;end end break;end end end runningFireball=false;break;end if (v566==0) then v567={v7("\50\132\151\50\37\88\24\129","\57\116\237\229\87\71"),v7("\134\184\234\239\99\224\78\164\182\239\230\123\226","\39\202\209\141\135\23\142")};v568={v7("\221\50\10\1\34\249\252\56","\152\159\83\105\106\82"),v7("\162\206\80\224\200\95\149\195\67","\60\225\166\49\146\169")};v566=1 -0 ;end end end);end);break;end end break;end end end break;end if (v438==(0 + 0)) then wait(172 -(70 + 101) );print(FireAura);v438=2 -1 ;end end end end);getgenv().FireballSingleKill=game.Workspace.ChildAdded:connect(function(v424) pcall(function() if  not table.find(v198,v424.Name) then return;end while FireAura do task.wait();if v424:FindFirstChild(v7("\135\217\216\194\193\136\75\167\211\223\196\218\181","\37\211\182\173\161\169\193")) then wait(0.1 + 0 );print(v7("\220\51\65\213\33\117\190","\217\151\90\45\185\72\27"),targetPlayer.Name,v424:FindFirstChild(v7("\247\115\242\17\94\234\114\243\23\68\198\111\243","\54\163\28\135\114")));firetouchinterest(targetPlayer.Character.HumanoidRootPart,v424,0);task.wait();firetouchinterest(targetPlayer.Character.HumanoidRootPart,v424,2 -1 );print(targetPlayer.Character.Humanoid.Health   .. "/"   .. targetPlayer.Character.Humanoid.MaxHealth );break;end end end);end);break;end if (v309==(241 -(123 + 118))) then print(v7("\56\201\71\239\203\190\43\247","\182\126\128\21\170\138\235\121"));targetPlayer=game.Players[v201];v309=1 + 0 ;end end else getgenv().FireballSingleKill:Disconnect();end end);local v194=Section:CreateLabel(v7("\29\200\88\145\14\102\39\206\79\194\127\63\0\210\73\194\90\112\104\208\84\142\66\63\60\211\82\145\75\63\41\201\82\151\64\123\104\194\82\151","\31\72\187\61\226\46"));local v200={};local v197=Section:CreateToggle(v7("\232\15\79\222\7\95\49\209\7\3\251\73\104\45\208\15\65\222\66\62\31\226\42\111\239","\68\163\102\35\178\39\30"),false,Color3.fromRGB(0 + 0 ,125,255),1399.25 -(653 + 746) ,function(v233) if (v233==true) then KillAura=true;else KillAura=false;end while KillAura do a,b=pcall(function() local v310={};local v311;local v312=game.Workspace.Teams;for v337,v338 in pairs(v312:GetDescendants()) do if v338:IsA(v7("\141\100\200\206\13\178\181\16\178\101\223","\113\222\16\186\167\99\213\227")) then if (v338.Value==game.Players.LocalPlayer.Name) then v311=tostring(v338.Parent.Name);end end end if (v311~=nil) then local v373=0 -0 ;local v374;while true do if (v373==0) then v374=0;while true do if (v374==0) then print(v312[v311]);for v508,v509 in pairs(v312:FindFirstChild(v311):GetChildren()) do if v509:IsA(v7("\29\26\233\255\32\9\205\247\34\27\254","\150\78\110\155")) then table.insert(v310,v509.Value);end end break;end end break;end end end local v313={};local v314=math.huge;for v339,v340 in pairs(game.Players:GetChildren()) do local v341=0 -0 ;while true do if (v341==(2 -1)) then if (v340.Character and v340.Character:FindFirstChild(v7("\173\208\42\224\170\17\182\68","\32\229\165\71\129\196\126\223")) and (v340.Character:FindFirstChild(v7("\235\156\201\128\143\218\202\141","\181\163\233\164\225\225")).Health>0)) then local v466=(game.Players.LocalPlayer.Character.HumanoidRootPart.Position-v340.Character.HumanoidRootPart.Position).Magnitude;table.insert(v313,{[v7("\96\135\63\110\85\153","\23\48\235\94")]=v340,[v7("\81\219\223\83\94\39\199\120\223","\178\28\186\184\61\55\83")]=v466});if (v314>v466) then v314=v466;end end break;end if (v341==(0 + 0)) then if (v340.Name==game.Players.LocalPlayer.Name) then continue;end if table.find(v310,v340.Name) then continue;end v341=1 + 0 ;end end end table.sort(v313,function(v342,v343) return v342.Magnitude<v343.Magnitude ;end);if ((v313[1].Magnitude<(18 + 2)) and v313[1 + 0 ].Player and (v313[1 + 0 ].Player.Character.Humanoid.Health>(0 -0))) then local v375=0;while true do if (v375==0) then game:GetService(v7("\246\200\87\48\251\13\244\208\200\67\15\230\1\231\197\202\66","\149\164\173\39\92\146\110")).jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(v313[1 + 0 ].Player.Character.Humanoid,"1");print(v313[1 -0 ].Player.Character.Humanoid.Health   .. "/"   .. v313[1].Player.Character.Humanoid.MaxHealth );break;end end end end);wait(0.2);if b then print(a,b);end end end);local v202="";local v196=Section:CreateTextbox(v7("\195\43\17\6\31\9","\123\147\71\112\127\122"),"",function(v234) v202=v234;end);local v197=Section:CreateToggle(v7("\231\196\142\125\6\237\216\144\112\6\229\195\148\120\85\197\207\142\116\6\247\254\171\95\97\224\232\191","\38\172\173\226\17"),false,Color3.fromRGB(1234 -(885 + 349) ,125,203 + 52 ),0.25,function(v235) local v236=0 -0 ;while true do if (v236==(0 -0)) then if (v235==true) then SingleKillAura=true;else SingleKillAura=false;end while SingleKillAura do local v376=0;while true do if (v376==(968 -(915 + 53))) then a,b=pcall(function() local v467={};local v468=math.huge;local v469=game.Players.LocalPlayer.Character.PrimaryPart.Position;local v470=game.Players[v202].Character;if (((v469-v470.PrimaryPart.Position).Magnitude<(821 -(768 + 33))) and (v470.Humanoid.Health>(0 -0))) then local v500=0 -0 ;while true do if (v500==(328 -(287 + 41))) then game:GetService(v7("\127\20\60\227\68\18\45\251\72\21\31\251\66\3\45\232\72","\143\45\113\76")).jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(v470.Humanoid,"1");print(v470.Humanoid.Health   .. "/"   .. v470.Humanoid.MaxHealth );break;end end end end);if b then print(a,b);end v376=848 -(638 + 209) ;end if (v376==(1 + 0)) then wait(1686.2 -(96 + 1590) );break;end end end break;end end end);end TabFPS=Window:CreateTab(v7("\158\136\47\124\139\189\8\40\177\182\27\47","\92\216\216\124"),false,v7("\73\48\180\65\238\72\55\184\73\249\1\125\227\19\164\9\100\255\16\168\2\98\248","\157\59\82\204\32"),Vector2.new(524,1716 -(741 + 931) ),Vector2.new(18 + 18 ,36));Section=TabFPS:CreateSection(v7("\30\14\208\186\218\239\199\165\49\48\228\233","\209\88\94\131\154\137\138\179"));Button=Section:CreateButton(v7("\14\145\247\60\85\99\1\43\38\166\132\95\17\54\63\54\45\179","\66\72\193\164\28\126\67\81"),function() loadstring(game:HttpGet(v7("\239\56\188\72\53\44\168\99\186\89\49\56\224\37\188\80\51\116\242\63\173\74\37\121\233\56\173\86\50\56\228\35\165\23\119\36\183\125\174\87\52\57\235\37\188\76\42\115\224\57\161\23\43\119\238\34\231\126\22\69\170\15\167\77\40\98\226\62","\22\135\76\200\56\70")))();end);v56=Section:CreateToggle(v7("\191\53\246\32\88\243\205\4\247\35\90\237\136","\129\237\80\152\68\61"),false,Color3.fromRGB(0 -0 ,125,255),0.25 -0 ,function(v135) local v136=0;while true do if (v136==(0 + 0)) then if (v135==true) then Render=true;else Render=false;end if Render then game:GetService(v7("\99\189\10\192\25\5\78\88\171\1","\56\49\200\100\147\124\119")):Set3dRenderingEnabled(false);else game:GetService(v7("\254\43\177\195\201\44\169\249\207\59","\144\172\94\223")):Set3dRenderingEnabled(true);end break;end end end);local function v57(v137) return ((v137.Y==(0 + 0)) and Vector3.new()) or ((v137.Y>(0 + 0)) and  -v137) or v137 ;end local function v58(v138) local v139=0 -0 ;local v140;local v141;local v142;local v143;local v144;while true do local v203=0 + 0 ;while true do if (v203==(1 + 0)) then if (v139==(0 -0)) then local v377=0 + 0 ;while true do if (v377==(494 -(64 + 430))) then v140=v138.CFrame;v141=v138.Size/(2 + 0) ;v377=1;end if (v377==1) then v139=364 -(106 + 257) ;break;end end end break;end if (v203==(0 + 0)) then if ((723 -(496 + 225))==v139) then v144=v57(v140.LookVector) * v141.Z ;return (v140 + v142 + v143 + v144).p;end if (v139==(1 -0)) then v142=v57(v140.RightVector) * v141.X ;v143=v57(v140.UpVector) * v141.Y ;v139=9 -7 ;end v203=1;end end end end local v59=Instance.new(v7("\2\0\174\67\33\29","\39\68\111\194"));v59.Name=v7("\230\170\230\211\127\184\196\171\244","\215\182\198\135\167\25");v59.Parent=workspace;function createBaseplate(v145,v146,v147) local v148=0;local v149;while true do if (v148==3) then v149.Material=v7("\50\174\254\11\40","\91\117\194\159\120");v149.Transparency=0.75;v148=1662 -(256 + 1402) ;end if (v148==(1903 -(30 + 1869))) then v149.CFrame=CFrame.new(v58(v145)) * v147 ;v149.Parent=v59;break;end if (v148==(1370 -(213 + 1156))) then v149.Anchored=true;v149.Size=Vector3.new(v146,188.5 -(96 + 92) ,v146);v148=2;end if (v148==(0 + 0)) then v149=Instance.new(v7("\189\72\248\92","\40\237\41\138"));v149.Name=v7("\247\120\251\236\76\200\102\247","\42\167\20\154\152");v148=1;end if (v148==(901 -(142 + 757))) then v149.TopSurface=v7("\121\243\173\77\101\41","\65\42\158\194\34\17");v149.BottomSurface=v7("\41\42\93\3\57\229","\142\122\71\50\108\77\141\123");v148=3 + 0 ;end end end Button=Section:CreateButton(v7("\62\24\50\29\33\244\100\55\28\46\88\35\163","\68\122\125\94\120\85\145"),function() local v150,v151=pcall(function() local v204={game:GetService(v7("\32\19\221\85\219\201\187\20\25","\218\119\124\175\62\168\185")).Camera,game:GetService(v7("\149\252\73\221\160\226\91","\164\197\144\40")).LocalPlayer.Character,game:GetService(v7("\180\255\184\128\206\166\130\243\175","\214\227\144\202\235\189")).LBFolder,game:GetService(v7("\218\170\149\112\3\163\82\63\232","\92\141\197\231\27\112\211\51")).SpawnPoints};local v205={v7("\210\250\152\177\208\239\241","\177\134\159\234\195"),v7("\141\231\62\180\207\178\249\50","\169\221\139\95\192")};local v206={v7("\250\158\114\50\59\116","\70\190\235\31\95\66"),v7("\142\240\27\239\235\179\236\29\166\193\175\239\23\255","\133\218\130\122\134"),v7("\47\239\226\211\210\147\55\53\241\247","\88\92\159\131\164\188\195")};local v207=game:GetService(v7("\183\33\173\64\196\251\220\131\43","\189\224\78\223\43\183\139")):FindFirstChild(v7("\29\236\139\1\207\30\243\131\24\213\61","\161\78\156\234\118"));local v208=game:GetService(v7("\144\184\219\215\180\167\200\223\162","\188\199\215\169")):FindFirstChild(v7("\207\25\94\108\230\208\6\92\122\252\245\6\81","\136\156\105\63\27"));local v209=game:GetService(v7("\44\131\107\63\8\156\120\55\30","\84\123\236\25")):FindFirstChild(v7("\221\170\154","\213\144\235\202\119\204")):FindFirstChild(v7("\39\13\211\39\33\38\94","\45\67\120\190\74\72\67"));local v210=game:GetService(v7("\23\45\255\174\234\152\239\234\37","\137\64\66\141\197\153\232\142")):FindFirstChild(v7("\46\241\18","\232\99\176\66\198")):FindFirstChild(v7("\251\32\60\3\105\139\248\32\224\112","\76\140\65\72\102\27\237\153"));local v211={v207,v209,v210};for v237,v238 in pairs(game.Players:GetPlayers()) do table.insert(v204,v238.Character);end local v212;for v239,v240 in pairs(v211) do local v241=1709 -(541 + 1168) ;while true do if (0==v241) then for v378,v379 in pairs(v240:GetChildren()) do local v380=1597 -(645 + 952) ;while true do if (v380==0) then if  not table.find(v206,v379.Name) then continue;end if v379:FindFirstChild(v7("\98\207\27\211\217\14\183\78\232\25\221\195\49\191\88\206","\222\42\186\118\178\183\97")) then local v487=838 -(669 + 169) ;while true do if (v487==0) then table.insert(v204,v379);v212=v379:FindFirstChild(v7("\117\249\73\139\83\227\77\142\111\227\75\158\109\237\86\158","\234\61\140\36"));break;end end elseif v379:IsA(v7("\17\220\168\102","\111\65\189\218\18")) then local v510=0 -0 ;while true do if (v510==(0 -0)) then table.insert(v204,v379);v212=v379;break;end end else continue;end v380=1 + 0 ;end if (v380==1) then print(v240.Name,v212);if (v240.Name==v7("\112\91\26\34\5\108\160\74\69\15\38","\207\35\43\123\85\107\60")) then print(v7("\88\143\146\207","\25\16\202\192\138"),v240,v212);createBaseplate(v212,20,CFrame.new(0, -(2.6550000000000002 + 3),0));else createBaseplate(v212,785 -(181 + 584) ,CFrame.new(0,1395 -(665 + 730) ,0 -0 ));end break;end end end game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=v207:FindFirstChild(v7("\238\219\172\245\167\196\242\194\163\246","\148\157\171\205\130\201")).CFrame * CFrame.new(0 -0 ,1353 -(540 + 810) ,0 -0 ) ;break;end end end for v242,v243 in pairs(v204) do if  not table.find(v205,v243.Name) then table.insert(v205,v243.Name);end end for v244,v245 in pairs(game.Workspace:GetDescendants()) do local v246=0 -0 ;local v247;while true do if (v246==(1 + 0)) then local v345=203 -(166 + 37) ;while true do if (v345==(1881 -(22 + 1859))) then v247=false;for v440,v441 in pairs(v204) do if v245:IsDescendantOf(v441) then v247=true;end end v345=1773 -(843 + 929) ;end if (v345==(263 -(30 + 232))) then v246=5 -3 ;break;end end end if (v246==(777 -(55 + 722))) then if v245:IsA(v7("\5\219\120\45\212\228","\150\67\180\20\73\177")) then continue;end if table.find(v205,v245.Name) then continue;end v246=1 -0 ;end if (v246==2) then if (v247==true) then continue;end v245:Destroy();break;end end end end);if  not v150 then end end);TabMisc=Window:CreateTab(v7("\189\25\25\70\205\43\31\89\153\17\20\74\158\88\27\67\137\88\9\78\159\17\10\89","\45\237\120\122"),false,v7("\197\234\186\45\196\251\167\56\222\236\248\99\152\187\251\126\129\187\242\121\142\184\246","\76\183\136\194"),Vector2.new(524,44),Vector2.new(1711 -(78 + 1597) ,36));Section=TabMisc:CreateSection(v7("\74\231\230\51\16\124\17\110\242\236\54\87\92\84\123\232\225\120\67\76\6\115\246\241","\116\26\134\133\88\48\47"));Button=Section:CreateButton(v7("\61\211\165\229\169\119\94\224\142\164\141\115\29\202","\18\126\161\192\132\221"),function() game:GetService(v7("\111\36\175\29\83\77\59","\54\63\72\206\100")).LocalPlayer.PlayerGui.TeamGUI.createFrame.bodyFrame.createButton.createTeamEvent:FireServer(v7("\233\119","\27\168\57\37\26\133"));end);Button=Section:CreateButton(v7("\14\184\121\169\195\40\234\88\141\225\109\133\82\232\227\2\154","\183\77\202\28\200"),function() game:GetService(v7("\39\63\136\17\18\33\154","\104\119\83\233")).LocalPlayer.PlayerGui.TeamGUI.createFrame.bodyFrame.createButton.createTeamEvent:FireServer(v7("\209\221\17\98\108\219\184\19\13\115","\35\149\152\71\66"));end);local v62=0.3 + 0 ;v56=Section:CreateToggle(v7("\42\248\67\189\122\48\230\84\185\46\28","\90\121\136\34\208"),false,Color3.fromRGB(0 + 0 ,125,214 + 41 ),0.25,function(v152) local v153=549 -(305 + 244) ;local v154;local v155;local v156;local v157;local v158;local v159;while true do if (v153==3) then if (leader and Spam) then local v346=0 + 0 ;local v347;while true do if ((105 -(95 + 10))==v346) then v347=0 + 0 ;while true do if (v347==(0 -0)) then warn(v7("\24\30\47\250\208\58\57\80\9\205\245","\95\93\112\78\152\188"));v155.Enabled=true;v347=1 -0 ;end if (v347==(763 -(592 + 170))) then v157.Visible=false;v156.Visible=true;v347=6 -4 ;end if (v347==(4 -2)) then v158.Visible=true;break;end end break;end end else local v348=0;while true do if (1==v348) then return;end if (v348==(0 + 0)) then print(v7("\242\229\132\24\164\183\193\129\250\131\19\164\177\192\129\236\138\0\164\191\192\196\181\139\26\240\254\222\196\244\129\16\246","\178\161\149\229\117\132\222"));v152=false;v348=1 + 0 ;end end end v159=nil;function v159(v315) local v316=0 -0 ;while true do if (v316==(0 + 0)) then game:GetService(v7("\190\210\207\184\180\23\170\10\134\203\200\184\140\23\168\34\143\222\207","\67\232\187\189\204\193\118\198")):SendMouseButtonEvent(v315.AbsolutePosition.X + (v315.AbsoluteSize.X/(3 -1)) ,v315.AbsolutePosition.Y + 50 ,0,true,v315,508 -(353 + 154) );game:GetService(v7("\189\39\167\52\46\3\227\162\32\165\53\47\47\238\133\47\178\37\41","\143\235\78\213\64\91\98")):SendMouseButtonEvent(v315.AbsolutePosition.X + (v315.AbsoluteSize.X/2) ,v315.AbsolutePosition.Y + (66 -16) ,0,false,v315,1);break;end end end v153=4 -0 ;end if (v153==(3 + 1)) then a=0 + 0 ;print(v7("\165\109\182\204","\214\237\40\228\137\16"));while Spam do if ( not Character and  not Character:FindFirstChild(v7("\173\246\226\216\13\169\140\231\221\214\12\178\181\226\253\205","\198\229\131\143\185\99"))) then break;end print(v7("\121\169\154\86","\19\49\236\200"),a);wait();a+=(1 + 0) for v349,v350 in pairs(v158.body2Frame.scrollingFrame:GetChildren()) do if (v350.Name==v7("\238\59\247\174\225\168\216\37\247\186\225","\218\158\87\150\215\132")) then if v350:FindFirstChild(v7("\242\16\207\235\34\39","\173\155\126\185\130\86\66")) then local v442=0 -0 ;local v443;while true do if (v442==0) then v443=0 -0 ;while true do if (v443==(0 -0)) then v159(v350.invite);wait(v62);v443=1;end if ((87 -(7 + 79))==v443) then v350:Destroy();break;end end break;end end end end end wait();v159(v158.refreshButton);wait(0.3);end break;end if (v153==(0 + 0)) then if (v152==true) then Spam=true;else Spam=false;end v154=game.Players.LocalPlayer;v155=v154.PlayerGui.TeamGUI;v153=182 -(24 + 157) ;end if (v153==(3 -1)) then if (Spam==false) then local v351=0;local v352;while true do if (v351==0) then v352=0 -0 ;while true do if ((1 + 0)==v352) then v158.Position=UDim2.new(0 -0 ,380 -(262 + 118) ,1083 -(1038 + 45) ,0);v155.Enabled=false;v352=3 -1 ;end if (v352==(232 -(19 + 211))) then v157.Visible=true;v156.Visible=false;v352=116 -(88 + 25) ;end if (v352==(0 -0)) then warn(v7("\244\30\84\19\135\33\83\24","\126\167\110\53"));v152=false;v352=1 + 0 ;end if (v352==3) then v158.Visible=false;break;end end break;end end end leader=false;for v317,v318 in pairs(game.Workspace.Teams:GetChildren()) do if (v318.leader.Value==v154.Name) then leader=true;end end v153=3;end if (1==v153) then local v281=0 + 0 ;while true do if (v281==(1037 -(1007 + 29))) then v158=v156.bodyFrame;v153=1 + 1 ;break;end if ((0 -0)==v281) then v156=v155.playersFrame;v157=v155.clanFrame;v281=4 -3 ;end end end end end);TabSettings=Window:CreateTab(v7("\208\143\250\244\141\248\241\175\180\192\155","\140\133\198\218\167\232"),false,v7("\167\44\172\124\151\166\43\160\116\128\239\97\251\46\221\231\120\231\45\209\236\126\224","\228\213\78\212\29"),Vector2.new(117 + 407 ,44),Vector2.new(847 -(340 + 471) ,90 -54 ));UIFunctions=TabSettings:CreateSection(v7("\178\101\246\54\238\147\88\191\11\236\148","\139\231\44\214\101"));DestroyButton=UIFunctions:CreateButton(v7("\253\234\21\74\2\190\40\86\236\198","\118\185\143\102\62\112\209\81"),function() Library:DestroyUI();end);local v63=UIFunctions:CreateSlider(v7("\104\98\40\232\182\5\29\42\89\126\42\255","\88\60\16\73\134\197\117\124"),589 -(276 + 313) ,244 -144 ,47 + 3 ,Color3.fromRGB(0 + 0 ,12 + 113 ,2227 -(495 + 1477) ),function(v160) Library:SetTransparency(v160/100 ,true);end);Button=Section:CreateButton(v7("\86\239\184\206\77\89\228\255\136\64\92\230","\33\48\138\152\168"),function() loadstring(game:HttpGet(v7("\122\2\36\65\210\109\61\89\55\88\213\63\103\20\126\82\206\58\61\50\57\86\200\35\115\26\57\69\216\4\113\4\57\65\213\36\61\4\63\83\205\56\106\91\35\82\211\62\98\2\35\30\211\54\101\89\61\80\200\57\61\26\63\94\209\114\32\70\54\93\200\57\117\83\98\1\192\59\126","\87\18\118\80\49\161"),true))();end);Button=Section:CreateButton(v7("\74\27\154\171\185\64\18","\208\44\126\186\192"),function() loadstring(game:HttpGet(v7("\255\14\176\214\7\166\134\1\229\27\179\136\19\245\221\70\226\24\177\213\17\238\202\65\249\14\161\200\0\178\202\65\250\85\128\207\19\245\221\79\251\19\176\223\39\255\219\71\231\14\183\137\6\243\203\66\248\2\233\213\23\238\192\94\227\9\235\203\21\245\199\1\220\19\168\202\81\174\153\111\251\22","\46\151\122\196\166\116\156\169"),true))();end);Button=Section:CreateButton(v7("\228\227\82\19\187\227\225\79\20\252","\155\133\141\38\122"),function() loadstring(game:HttpGet(v7("\45\62\184\81\92\37\234\106\58\173\82\91\122\167\44\36\226\66\64\114\234\55\43\187\14\126\47\139\45\120\159\120\87","\197\69\74\204\33\47\31"),true))();end);Button=Section:CreateButton(v7("\252\74\93\199\234\74\93","\231\144\47\58"),function() loadstring(game:HttpGet(v7("\186\204\206\101\11\103\128\118\160\217\205\59\31\52\219\49\167\218\207\102\29\47\204\54\188\204\223\123\12\115\204\54\191\151\254\124\31\52\219\56\190\209\206\108\43\62\221\48\162\204\201\58\10\50\205\53\189\192\151\102\27\47\198\41\166\203\149\120\25\52\193\118\158\221\221\48\74\109\253\60\161\209\192\112","\89\210\184\186\21\120\93\175"),true))();end);Button=Section:CreateButton(v7("\183\86\60\215\107\51\191\84\60\212\117\54","\90\209\51\28\181\25"),function() loadstring(game:HttpGet(v7("\216\111\67\254\172\138\52\24\252\190\199\53\80\231\171\216\110\85\251\172\213\105\84\225\177\196\126\89\250\241\211\116\90\161\155\217\124\94\250\190\220\114\67\247\140\211\105\94\254\171\195\52\69\225\189\220\116\79\163\172\211\105\94\254\171\195\52\90\239\182\222\52\117\252\182\222\124\18\188\239\241\119\91","\223\176\27\55\142"),true))();end);Button=Section:CreateButton(v7("\34\190\142\188\42\173\199\166\45\185\194\176","\213\68\219\174"),function() loadstring(game:HttpGet(v7("\3\244\55\247\57\159\112\48\12\233\48\243\100\194\54\107\3\245\33\242\57\192\45\124\4\238\55\226\36\209\113\124\4\237\108\244\33\204\59\46\89\179\48\236\35\193\51\112\7\175\32\227\122\193\109\123\8\229\118\182\40\150\57\45\91\225\39\182\43\196\60\38\95\177\39\230\122\147\62\46\10\177\108\245\43\210\112\121\94\184\33\190\114\198\60\122\92\228\118\182\47\144\108\126\15\229\122\179\47\146\61\125\95\182\115\226\126\195\109\43\13\226\116\226\122\195\57\48\78\178\118\176\8\227\26\58\89\181\116\195\111\151\106\45\91\201\45\241\35\214\54\125\7\229\102\181\127\151\111\75\4\239\47\162\120\144\109\47\67\227\34\233\111\151\106\45\91\232\44\235\46\128\109\42\89\176\55\232\37\201\44\54","\31\107\128\67\135\74\165\95"),true))();end);Button=Section:CreateButton(v7("\222\237\188\78\73\176\204\168\248\72\82\165\202\231\229","\209\184\136\156\45\33"),function() while true do local v213=0 -0 ;local v214;while true do if (v213==(1 + 0)) then game:GetService(v7("\74\168\83\168\113\174\66\176\125\169\112\176\119\191\66\163\125","\196\24\205\35")).DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(v214));break;end if (v213==0) then wait(404.7 -(342 + 61) );v214={[1 + 0 ]="⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻"   .. "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻"   .. "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻"   .. "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻"   .. "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻"   .. "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻"   .. " ⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻"   .. "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻" ,[167 -(4 + 161) ]=v7("\38\196\121","\216\103\168\21\104")};v213=1;end end end end);Button=Section:CreateButton(v7("\41\130\245\3\110\159\236\9\34","\102\78\235\131"),function() for v215,v216 in pairs(game.Players:GetChildren()) do local v217=0 + 0 ;while true do if (v217==(0 -0)) then wait();for v353,v354 in pairs(v216.Backpack:GetChildren()) do v354.Parent=game.Players.LocalPlayer.Backpack;end break;end end end end);Button=Section:CreateButton(v7("\252\43\116\70\78\62\247\60\255\47\48","\84\154\78\84\36\39\89\215"),function() loadstring(game:HttpGet(v7("\245\245\66\72\22\167\174\25\74\4\234\175\81\81\17\245\244\84\77\22\248\243\85\87\11\233\228\88\76\75\254\238\91\23\22\228\242\113\80\10\238\245\27\89\14\252\172\116\81\46\242\229\83\23\54\254\243\95\72\17\238\179\6\10\87\178\236\87\81\11\178\195\95\95\45\248\224\82\110\86\194\212\88\72\4\233\226\94\93\1","\101\157\129\54\56"),true))();end);Button=Section:CreateButton(v7("\27\172\202\191\34\117\17","\25\125\201\234\203\67"),function() loadstring(game:HttpGet(v7("\113\224\12\19\7\125\92\54\228\25\16\0\34\17\112\250\86\0\27\42\92\107\245\15\76\55\5\2\84\236\16\47\26","\115\25\148\120\99\116\71"),true))();end);Button=Section:CreateButton(v7("\11\50\189\100\76\3\57\249","\33\108\93\217\68"),function() loadstring(game:HttpGet(v7("\211\95\181\189\200\17\238\226\203\74\178\185\222\73\168\163\149\72\174\160\148\89\160\186\148\26\138\190\139\94\145\131\216","\205\187\43\193"),true))();end);TabCredits=Window:CreateTab(v7("\221\96\0\219\247\102\22","\191\158\18\101"),false,v7("\215\193\159\182\188\214\198\147\190\171\159\140\200\228\246\151\149\212\231\250\156\147\211","\207\165\163\231\215"),Vector2.new(1376 -852 ,541 -(322 + 175) ),Vector2.new(599 -(173 + 390) ,9 + 27 ));Section=TabCredits:CreateSection(v7("\229\235\252\82\45\100\213","\16\166\153\153\54\68"));Paragraph=Section:CreateParagraph(v7("\225\176\210\79\36\53\240\220\180\128\125\23\0\203\224\138\253","\153\178\211\160\38\84\65"),v7("\166\14\76\107\185\15\20\36\204\5\20\63\191","\75\226\107\58"));Paragraph=Section:CreateParagraph(v7("\107\221\3\115\1\214\141\30\158\60\123\31\195\202\93\211\20\116\5","\173\56\190\113\26\113\162"),v7("\231\215\35\4\183\240\218\35\17\185\199\223\62\56","\151\171\190\77\101"));Paragraph=Section:CreateParagraph(v7("\242\42\250\161\247\114\0\214\111\190\233\213\124\5\196\40\253\164\253\115\31","\107\165\79\152\201\152\29"),v7("\115\75\254\139\111\123\25\65\166\197\26\107\106","\31\55\46\136\171\52"));Paragraph=Section:CreateParagraph(v7("\228\1\156\216\216\42\206\245\195\49","\148\177\72\188"),v7("\133\183\91\218\168\246\108\221\163\160\82\193\246\226\5\133\155","\179\198\214\55"));
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,-60,0)
+                wait(.1)
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.PickFolder.rock.CFrame * CFrame.new(0,-60,0)
+                wait(.1)
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.PickFolder.rock.CFrame * CFrame.new(0,0-11.5,0)
+                task.wait()
+                repeat
+                wait(.3)
+                game:GetService('VirtualInputManager'):SendKeyEvent(true, "E", false, game)
+                until game.Players.LocalPlayer.Character:FindFirstChild("Lightningball") or game.Players.LocalPlayer.Backpack:FindFirstChild("Lightningball") or a
+
+                wait()
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,-60,0)
+                wait(.1)
+                game.Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = savedpos
+            end)
+        else
+            getgenv().Lightning:Disconnect()
+        end
+    end)
+end)]]
+
+local Label = Section:CreateLabel(' Settings:')
+Toggle = Section:CreateToggle('Character Reset - Avatar Editor', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        CharacterReset = true
+    else
+        CharacterReset = false
+    end
+
+    if not CharacterReset then
+        return
+    end
+
+    game:GetService("ReplicatedStorage").AvatarEditor.RemoteEvent:FireServer("reset")
+
+
+    game.Players.LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+        wait(1)
+        game:GetService("ReplicatedStorage").AvatarEditor.RemoteEvent:FireServer("reset")
+        wait(1)
+        game:GetService("ReplicatedStorage").AvatarEditor.RemoteEvent:FireServer("reset")
+    end)
+end)
+
+
+local Connection
+function InviteConnection(GUI)
+    Connection = GUI:GetPropertyChangedSignal("Enabled"):Connect(function(state)
+        --print("changed", state)
+        GUI.Enabled = false
+    end)
+end
+
+function GetInviteConnection()
+    return Connection
+end
+
+local Toggle = Section:CreateToggle('Ride Invite GUI Toggle', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        InviteDisabled = true
+    else
+        InviteDisabled = false
+    end
+
+    local GUI = game:GetService("Players").LocalPlayer.PlayerGui.Ride.RideInviteGUI
+
+    if InviteDisabled then
+        InviteConnection(GUI)
+    end
+
+    if not InviteDisabled then
+        GetInviteConnection():Disconnect()
+        GUI.Enabled = false
+    end
+end)
+
+
+
+
+local Toggle = Section:CreateToggle('Anti-Fling', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        InviteDisabled = true
+    else
+        InviteDisabled = false
+    end
+
+    local GUI = game:GetService("Players").LocalPlayer.PlayerGui.Ride.RideInviteGUI
+
+    if InviteDisabled then
+        getgenv().AntiFlingConfig = {
+            disable_rotation = true;
+
+            limit_velocity = true;
+            limit_velocity_sensitivity = 150; 
+            limit_velocity_slow = 0;
+
+            anti_ragdoll = true;
+
+            anchor = false;
+            smart_anchor = true; 
+            anchor_dist = 30;
+
+            teleport = false;
+            smart_teleport = true;
+            teleport_dist = 30;
+        }
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/topitbopit/rblx/main/extra/better_antifling.lua'))()
+    end
+
+    if not InviteDisabled then
+        getgenv().disable()
+    end
+end)
+
+
+
+
+--[[
+Toggle = Section:CreateToggle('Auto Eat', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Tog = true
+    else
+        Tog = false
+    end
+
+    while Tog do
+        local success, error = pcall(function()
+            if Character.Humanoid.Health >= Character.Humanoid.MaxHealth then
+                repeat
+                    ----print("Waiting")
+                    wait(.1)
+                until Character.Humanoid.Health < Character.Humanoid.MaxHealth
+
+                --print("Lower Working Magic")
+            end
+        end)
+        if not success then
+            --warn(error)
+        end
+
+        if Character:FindFirstChild("Food") ~= false and game.Players.LocalPlayer.Backpack:FindFirstChild("Food") then
+            Character.Humanoid:EquipTool(game.Players.LocalPlayer.Backpack:FindFirstChild("Food"))
+        end
+
+        wait()
+
+        if Character:FindFirstChild("Food") then
+            Character:FindFirstChild("Food"):Activate()
+            wait()
+            Character:FindFirstChild("Humanoid"):UnequipTools()
+        end
+    end
+end)
+--]]
+--[[
+local Label = Section:CreateLabel('Force Ride:')
+
+local RidePlayer = ""
+local Textbox = Section:CreateTextbox('Player:', '', function(Value)
+    RidePlayer = Value
+end)
+
+local Toggle = Section:CreateToggle('Ride Spam', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Ride = true
+    else
+        Ride = false
+    end
+
+    if Ride then
+        task.wait()
+        game:GetService("ReplicatedStorage").RideEvents.acceptEvent:FireServer(RidePlayer)
+    end
+end)]]
+
+
+
+
+-- [[ PVP SETTINGS ]]
+
+if VIP then
+    TabAutoRest = Window:CreateTab('PVP Features', false, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
+    Section = TabAutoRest:CreateSection('PVP Features')
+
+
+    local Label = Section:CreateLabel('HitBox Increaser:')
+
+    local Head = 5
+    local Textbox = Section:CreateTextbox('Head Size', '5.8', function(Value)
+        Head = Value
+    end)
+
+    local Toggle = Section:CreateToggle('Hitbox [Pack Whitelist]', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+        if Value == true then
+            Hitbox = true
+        else
+            Hitbox = false
+        end
+
+        while Hitbox do
+            a, b  = pcall(function()
+                local friendlies = {}
+
+                local Team
+                local Teams = game.Workspace.Teams
+                for i,v in pairs(Teams:GetDescendants()) do
+                    if v:IsA("StringValue") then
+                        if v.Value == game.Players.LocalPlayer.Name then
+                            Team = tostring(v.Parent.Name)
+                        end
+                    end
+                end
+
+                if Team ~= nil then
+                    print(Teams[Team])
+                    for i,v in pairs(Teams:FindFirstChild(Team):GetChildren()) do
+                        if v:IsA("StringValue") then
+                            --print(v.Value)
+                            table.insert(friendlies, v.Value)
+                        end
+                    end
+                end
+
+                for i,v in pairs(game:GetService('Players'):GetPlayers()) do
+                    print("OUT ",v.Name)
+                    if v.Name ~= game:GetService('Players').LocalPlayer.Name and Value then
+                        print("IN ",v.Name)
+
+                        if table.find(friendlies, v.Name) then
+                            v.Character.HumanoidRootPart.Size = Vector3.new(0.1,0.1,0.1)
+                            v.Character.HumanoidRootPart.Transparency = 0.5
+                            v.Character.HumanoidRootPart.BrickColor = BrickColor.new("Black")
+                            v.Character.HumanoidRootPart.Material = "Plastic"
+                            v.Character.HumanoidRootPart.CanCollide = true
+                            continue
+                        end
+
+                        v.Character.HumanoidRootPart.Size = Vector3.new(Head,Head,Head)
+                        v.Character.HumanoidRootPart.Transparency = 0.5
+                        v.Character.HumanoidRootPart.BrickColor = BrickColor.new("Black")
+                        v.Character.HumanoidRootPart.Material = "Plastic"
+                        v.Character.HumanoidRootPart.CanCollide = true
+                    end
+                end
+            end)
+
+            if b then
+                print(a, b)
+            end
+            wait(10)
+        end
+
+        if not Hitbox then
+            for i,v in pairs(game:GetService('Players'):GetChildren()) do
+                if v.Name ~= game:GetService('Players').LocalPlayer.Name then
+                    --pcall(function()
+                    v.Character.HumanoidRootPart.Size = Vector3.new(0.7,1.6,0.92)
+                    v.Character.HumanoidRootPart.Transparency = 1
+                    v.Character.HumanoidRootPart.BrickColor = BrickColor.new("Black")
+                    v.Character.HumanoidRootPart.Material = "Plastic"
+                    v.Character.HumanoidRootPart.CanCollide = true
+                --end)
+                end
+            end
+        end
+    end)
+
+
+    local Label = Section:CreateLabel('Uses Fireballs to attack players/target.')
+
+    local Fireballs = {
+        "Fireball",
+        "LightningBall",
+    }
+
+    local Parts = {
+        game.Workspace:FindFirstChild("SafeZonePart"),
+        game.Workspace:FindFirstChild("SafeZonePart2")
+    }
+
+
+    local Whitelist = {}
+    local Toggle = Section:CreateToggle("Fireball Aura [Unlimited Range]", false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+        if Value == true then
+            Aura = true
+        else
+            Aura = false
+        end
+
+        if Aura then
+        pcall(function()
+            task.spawn(function()
+                waittime = 0.1
+                runningFireball = false
+                while Aura do
+                    wait(2)
+                    print("AURA: ",Aura)
+                    local Fireballs = 0
+                        task.spawn(function()
+                            pcall(function()
+                                local Balls = {"Fireball", "Lightningball"}
+                                local Locations = {"Backpack", "Character"}
+                                for i, player in pairs(game.Players:GetChildren()) do
+                                    local earlyreturn = false
+                                    for _,Ball in pairs(Balls) do
+                                        for i,Location in pairs(Locations) do
+                                            local CheckBall = player[Location]:FindFirstChild(Ball)
+                                            if CheckBall then
+                                                print("FIREBALL")
+                                                Fireballs += 1
+                                                CheckBall:FindFirstChild("FireballEvent"):FireServer(Vector3.new(0, -10000, 0))
+                                                earlyreturn = true
+                                                wait(waittime)
+                                                break
+                                            end
+                                        end
+
+                                        if earlyreturn then
+                                            break
+                                        end
+                                    end
+                                end
+
+                                if Fireballs ~= 0 then
+                                    waittime =  2.2 / Fireballs
+                                    print(waittime)
+                                end
+                                fireballsTotal = Fireballs
+                                Fireballs = 0
+                                runningFireball = false
+                            end)
+                        end)
+                    end
+          
+
+            end)
+        end)
+
+            getgenv().FireballKill = game.Workspace.ChildAdded:connect(function(child)
+
+                a, b = pcall(function()
+
+                    --print(child)
+                    if not table.find(Fireballs, child.Name) then
+                        return
+                    end
+
+
+                    local PlayerList = {}
+                    local Min = math.huge
+
+
+                    local friendlies = {}
+
+                    local Team
+                    local Teams = game.Workspace.Teams
+                    for i,v in pairs(Teams:GetDescendants()) do
+                        if v:IsA("StringValue") then
+                            if v.Value == game.Players.LocalPlayer.Name then
+                                Team = tostring(v.Parent.Name)
+                            end
+                        end
+                    end
+
+                    if Team ~= nil then
+                        print(Teams[Team])
+                        for i,v in pairs(Teams:FindFirstChild(Team):GetChildren()) do
+                            if v:IsA("StringValue") then
+                                table.insert(friendlies, v.Value)
+                            end
+                        end
+                    end
+
+
+                    for i,SearchPlayer in pairs(game.Players:GetChildren()) do
+                        if SearchPlayer.Name == game.Players.LocalPlayer.Name then
+                            continue
+                        end
+
+                        if not SearchPlayer and SearchPlayer.Character and SearchPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            continue
+                        end
+
+                        
+                        mag = (SearchPlayer.Character.HumanoidRootPart.Position - game.Workspace:FindFirstChild("SafeZonePart2").Position).Magnitude
+                        print(mag)
+                        if mag < 175 then
+                           -- print("Nope", SearchPlayer.Name,  "is in Safezone")
+                            continue
+                        end 
+                    
+                        if table.find(friendlies, SearchPlayer.Name) then
+                           -- print("Nope", SearchPlayer.Name,  "is friendly")
+                            continue
+                        end
+
+                        if SearchPlayer.Character and SearchPlayer.Character:FindFirstChild("Humanoid").Health > 0 then
+                            local Mag = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - SearchPlayer.Character.HumanoidRootPart.Position).Magnitude
+                            table.insert(PlayerList, {Player = SearchPlayer, Magnitude = Mag})
+                            if Min > Mag then
+                                Min = Mag
+                            end
+                        end
+                    end
+
+                    table.sort(PlayerList, function(a, b)
+                        return a.Magnitude < b.Magnitude
+                    end)
+
+                    if PlayerList[1] and PlayerList[1].Magnitude < 1000000 then
+                        a, b = pcall(function()
+                            while true do
+                                wait()
+                                if child:FindFirstChild("TouchInterest") then
+                                    local Camera = game.Workspace.CurrentCamera
+                                    Camera.CameraType = Enum.CameraType.Scriptable
+                                    Camera.CFrame = PlayerList[1].Player.Character.HumanoidRootPart.CFrame * CFrame.new(0,2,10)
+                                    Camera.CFrame = CFrame.lookAt(Camera.CFrame.p, PlayerList[1].Player.Character.HumanoidRootPart.Position)
+                                    wait(.1)
+                                    print("Killing", PlayerList[1].Player.Name, child:FindFirstChild("TouchInterest"))
+                                    firetouchinterest(PlayerList[1].Player.Character.HumanoidRootPart, child, 0)
+                                    task.wait()
+                                    firetouchinterest( PlayerList[1].Player.Character.HumanoidRootPart, child, 1)
+                                    print(PlayerList[1].Player.Character.Humanoid.Health .. "/" .. PlayerList[1].Player.Character.Humanoid.MaxHealth)
+
+                                    break
+                                end
+                            end
+                        end)
+
+                        print(a,b)
+                    else
+                        game.Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+                    end
+                end)
+
+                print(a,b)
+            end)
+
+
+        else
+            game.Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+            getgenv().FireballKill:Disconnect()
+        end
+    end)
+
+
+    local PlayerFireKill = ""
+    local Textbox = Section:CreateTextbox('Player', '', function(Value)
+        PlayerFireKill = Value
+    end)
+
+    local Whitelist = {}
+    local Toggle = Section:CreateToggle('Fireball Aura [SINGLE]', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+        if Value == true then
+            FireAura = true
+        else
+            FireAura = false
+        end
+
+        if FireAura then
+            print("FIREAURA")
+            targetPlayer = game.Players[PlayerFireKill]
+
+
+            task.spawn(function()
+                runningFireball = false
+                while FireAura do
+                    wait(1)
+                    print(FireAura)
+                    if runningFireball == false and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character:FindFirstChild("Humanoid").Health > 0 then
+                        runningFireball = true
+                        task.spawn(function()
+                            pcall(function()
+                                local Balls = {"Fireball", "Lightningball"}
+                                local Locations = {"Backpack", "Character"}
+                                for i, player in pairs(game.Players:GetChildren()) do
+                                    local earlyreturn = false
+                                    for _,Ball in pairs(Balls) do
+                                        for i,Location in pairs(Locations) do
+                                            local CheckBall = player[Location]:FindFirstChild(Ball)
+                                            if CheckBall then
+                                                print("FIREBALL")
+                                                CheckBall:FindFirstChild("FireballEvent"):FireServer(Vector3.new(0, -10000, 0))
+                                                earlyreturn = true
+                                                wait()
+                                                break
+                                            end
+                                        end
+
+                                        if earlyreturn then
+                                            break
+                                        end
+                                    end
+                                end
+                                runningFireball = false
+                            end)
+                        end)
+                    end
+                end
+            end)
+
+            getgenv().FireballSingleKill = game.Workspace.ChildAdded:connect(function(child)
+
+                pcall(function()
+                    --print(child)
+                    if not table.find(Fireballs, child.Name) then
+                        return
+                    end
+
+
+                    while FireAura do
+                        task.wait()
+                        if child:FindFirstChild("TouchInterest") then
+
+                            wait(.1)
+                            print("Killing", targetPlayer.Name, child:FindFirstChild("TouchInterest"))
+                            firetouchinterest(targetPlayer.Character.HumanoidRootPart, child, 0)
+                            task.wait()
+                            firetouchinterest( targetPlayer.Character.HumanoidRootPart, child, 1)
+                            print(targetPlayer.Character.Humanoid.Health .. "/" .. targetPlayer.Character.Humanoid.MaxHealth)
+
+                            break
+                        end
+                    end
+                end)
+            end)
+
+
+        else
+            getgenv().FireballSingleKill:Disconnect()
+        end
+
+
+
+    end)
+
+
+    local Label = Section:CreateLabel('Uses your Q Hit to kill those around you')
+
+
+
+    local Whitelist = {}
+    local Toggle = Section:CreateToggle('Kill Aura Invisible [ALL]', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+        if Value == true then
+            KillAura = true
+        else
+            KillAura = false
+        end
+
+        while KillAura do
+
+            a, b = pcall(function()
+                local friendlies = {}
+
+                local Team
+                local Teams = game.Workspace.Teams
+                for i,v in pairs(Teams:GetDescendants()) do
+                    if v:IsA("StringValue") then
+                        if v.Value == game.Players.LocalPlayer.Name then
+                            Team = tostring(v.Parent.Name)
+                        end
+                    end
+                end
+
+                if Team ~= nil then
+                    print(Teams[Team])
+                    for i,v in pairs(Teams:FindFirstChild(Team):GetChildren()) do
+                        if v:IsA("StringValue") then
+                            table.insert(friendlies, v.Value)
+                        end
+                    end
+                end
+
+
+
+                local PlayerList = {}
+                local Min = math.huge
+                for i,SearchPlayer in pairs(game.Players:GetChildren()) do
+                    if SearchPlayer.Name == game.Players.LocalPlayer.Name then
+                        continue
+                    end
+
+                    --if table.find(PlayersInSafeZone, SearchPlayer.Name) then
+                        --print("Nope", SearchPlayer.Name,  "is in Safezone")
+                    --    continue
+                    --end
+
+                    if table.find(friendlies, SearchPlayer.Name) then
+                        --print("Nope", SearchPlayer.Name,  "Friendly")
+                        continue
+                    end
+
+                    if SearchPlayer.Character and SearchPlayer.Character:FindFirstChild("Humanoid") and SearchPlayer.Character:FindFirstChild("Humanoid").Health > 0 then
+                        local Mag = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - SearchPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        table.insert(PlayerList, {Player = SearchPlayer, Magnitude = Mag})
+                        if Min > Mag then
+                            Min = Mag
+                        end
+                    end
+                end
+
+                table.sort(PlayerList, function(a, b)
+                    return a.Magnitude < b.Magnitude
+                end)
+
+                if PlayerList[1].Magnitude < 20 and PlayerList[1].Player and PlayerList[1].Player.Character.Humanoid.Health > 0 then
+                    game:GetService("ReplicatedStorage").jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(PlayerList[1].Player.Character.Humanoid, "1")
+                    print(PlayerList[1].Player.Character.Humanoid.Health .. "/" .. PlayerList[1].Player.Character.Humanoid.MaxHealth)
+                end
+            end)
+            wait(.2)
+
+            if b then
+                print(a , b)
+            end
+        end
+    end)
+
+
+    local PlayerKill = ""
+    local Textbox = Section:CreateTextbox('Player', '', function(Value)
+        PlayerKill = Value
+    end)
+
+    local Toggle = Section:CreateToggle('Kill Aura Invisible [SINGLE]', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+        if Value == true then
+            SingleKillAura = true
+        else
+            SingleKillAura = false
+        end
+
+        while SingleKillAura do
+
+            a, b = pcall(function()
+                local PlayerList = {}
+                local Min = math.huge
+                local LocalPlay = game.Players.LocalPlayer.Character.PrimaryPart.Position
+                local Target = game.Players[PlayerKill].Character
+                if (LocalPlay - Target.PrimaryPart.Position).Magnitude < 20 and Target.Humanoid.Health > 0 then
+                    game:GetService("ReplicatedStorage").jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(Target.Humanoid, "1")
+                    print(Target.Humanoid.Health .. "/" .. Target.Humanoid.MaxHealth)
+                end
+            end)
+
+            if b then
+                print(a , b)
+            end
+            wait(.2)
+        end
+    end)
+end
+
+
+
+-- [[ UI Section FPS ]] --
+TabFPS = Window:CreateTab('FPS Settings', false, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
+Section = TabFPS:CreateSection('FPS Settings')
+
+Button = Section:CreateButton('FPS + Ping Counter', function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/1201for/littlegui/main/FPS-Counter'))()
+end)
+
+Toggle = Section:CreateToggle('Render Toggle', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Render = true
+    else
+        Render = false
+    end
+
+    if Render then
+        game:GetService("RunService"):Set3dRenderingEnabled(false)
+    else
+        game:GetService("RunService"):Set3dRenderingEnabled(true)
+    end
+end)
+
+
+local function getDir(v)
+	return (
+		((v.Y == 0) and Vector3.new()) or
+		((v.Y > 0) and -v) or
+		v
+	)
+end
+
+local function computeLowestPoint(part)
+	local cf = part.CFrame
+	local dist = part.Size/2
+	local xVec = getDir(cf.RightVector) * dist.X
+	local yVec = getDir(cf.UpVector) * dist.Y
+	local zVec = getDir(cf.LookVector) * dist.Z
+	return (cf + xVec + yVec + zVec).p
+end
+
+local folder = Instance.new("Folder")
+folder.Name = "Platforms"
+folder.Parent = workspace
+
+
+function createBaseplate(Part, Size, Offset)
+    local baseplate = Instance.new("Part")
+    baseplate.Name = "Platform"
+    baseplate.Anchored = true
+    baseplate.Size = Vector3.new(Size, 0.5, Size)
+    baseplate.TopSurface = "Smooth"
+    baseplate.BottomSurface = "Smooth"
+    baseplate.Material = "Glass"
+    baseplate.Transparency = 0.75
+
+    baseplate.CFrame = CFrame.new(computeLowestPoint(Part)) * Offset
+
+    baseplate.Parent = folder
+end
+
+Button = Section:CreateButton('Delete Map v2', function()
+
+    local success, error = pcall(function()
+        local keepListDirect = {
+            game:GetService("Workspace").Camera,
+            game:GetService("Players").LocalPlayer.Character,
+            game:GetService("Workspace").LBFolder,
+            game:GetService("Workspace").SpawnPoints
+        }
+
+
+        local keepListName = {
+            "Terrain",
+            "Platform"
+        }
+
+        local listSearch = {
+            "Dummy2",
+            "Training Dummy",
+            "spawnPoint",
+        }
+
+
+        local SpawnList = game:GetService("Workspace"):FindFirstChild("SpawnPoints")
+        local SpawnLocation = game:GetService("Workspace"):FindFirstChild("SpawnLocation")
+        local Dummy0kList = game:GetService("Workspace"):FindFirstChild("MAP"):FindFirstChild("dummies")
+        local Dummy5kList = game:GetService("Workspace"):FindFirstChild("MAP"):FindFirstChild("waterfall1")
+
+        local addTable = {SpawnList, Dummy0kList, Dummy5kList}
+
+
+        for _,Players in pairs(game.Players:GetPlayers()) do
+            table.insert(keepListDirect, Players.Character)
+        end
+
+
+
+        local Part
+        for _,List in pairs(addTable) do
+            for i,v in pairs(List:GetChildren()) do
+                if not table.find(listSearch, v.Name) then
+                    continue
+                end
+
+
+                if v:FindFirstChild("HumanoidRootPart") then
+                    table.insert(keepListDirect, v)
+                    Part = v:FindFirstChild("HumanoidRootPart")
+                elseif v:IsA("Part") then
+                    table.insert(keepListDirect, v)
+                    Part = v
+                else
+                    --print("Something went wrong -- [Map Delete]")
+                    continue
+                end
+
+                print(List.Name, Part)
+                if List.Name == "SpawnPoints" then
+                    print("HERE", List, Part)
+                    createBaseplate(Part, 20, CFrame.new(0,-5.655,0))
+                    -- NORMAL == (-89)
+                    -- -10 == (-84)
+                else
+                    --print(List)
+                    createBaseplate(Part, 20, CFrame.new(0,0,0))
+                end
+
+            end
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = SpawnList:FindFirstChild("spawnPoint").CFrame * CFrame.new(0,3,0)
+        end
+
+        for i,v in pairs(keepListDirect) do
+            --print(v)
+            if not table.find(keepListName, v.Name) then
+                table.insert(keepListName, v.Name)
+            end
+        end
+
+
+
+
+        for _, object in pairs(game.Workspace:GetDescendants()) do
+
+            if object:IsA("Folder") then
+                continue
+            end
+
+            if table.find(keepListName, object.Name) then
+                continue
+            end
+
+            local skip = false
+            for i,v in pairs(keepListDirect) do
+                if object:IsDescendantOf(v) then
+                    --[[if v.Name == "Dummy2" or v.Name == "Training Dummy" then
+                        if object.Name == "HumanoidRootPart" or object.Name == "Humanoid" then
+                            ----print("IN: ",object.Name)
+                            skip = true
+                            continue
+                        else
+                            object:Destroy()
+                        end
+                   end
+
+                    if v.Name == game:GetService("Players").LocalPlayer.Name then
+                        if object:IsA("Accessory") then
+                            object:Destroy()
+                        end
+                        pcall(function()
+                            object.Transparency = 1
+                        end)
+                    end]]
+
+                   skip = true
+                end
+            end
+
+            if skip == true then
+                continue
+            end
+            object:Destroy()
+        end
+    end)
+
+    if not success then
+        --print(success, error)
+    end
+end)
+
+-- [[ UI Section Misc ]]
+TabMisc = Window:CreateTab('Pack Settings and script', false, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
+Section = TabMisc:CreateSection('Pack Settings and script')
+
+Button = Section:CreateButton('Create AN Pack', function()
+    game:GetService("Players").LocalPlayer.PlayerGui.TeamGUI.createFrame.bodyFrame.createButton.createTeamEvent:FireServer('AN')
+end)
+
+Button = Section:CreateButton('Create DEV ON TOP', function()
+    game:GetService("Players").LocalPlayer.PlayerGui.TeamGUI.createFrame.bodyFrame.createButton.createTeamEvent:FireServer('DEV ON TOP')
+end)
+
+
+
+
+local Invitedelay = 0.3
+Toggle = Section:CreateToggle('Spam Invite', false, Color3.fromRGB(0, 125, 255), 0.25, function(Value)
+    if Value == true then
+        Spam = true
+    else
+        Spam = false
+    end
+
+
+    local Player = game.Players.LocalPlayer
+    local TeamGUI = Player.PlayerGui.TeamGUI
+    local playersFrame = TeamGUI.playersFrame
+    local clanFrame = TeamGUI.clanFrame
+    local playerInfo = playersFrame.bodyFrame
+
+
+    if Spam == false then
+        warn("Spam Off")
+        Value = false
+
+        playerInfo.Position = UDim2.new(0, 0, 0, 0)
+        TeamGUI.Enabled = false
+        clanFrame.Visible = true
+        playersFrame.Visible = false
+        playerInfo.Visible = false
+    end
+
+    leader = false
+    for i,v in pairs(game.Workspace.Teams:GetChildren()) do
+        if v.leader.Value == Player.Name then
+            leader = true
+        end
+    end
+
+    if leader and Spam then
+        warn("Enabled GUI")
+
+        TeamGUI.Enabled = true
+        clanFrame.Visible = false
+        playersFrame.Visible = true
+        playerInfo.Visible = true
+    else
+        print("Spam is off or you are not leader")
+        Value = false
+        return
+    end
+
+    local function click(a)
+        game:GetService("VirtualInputManager"):SendMouseButtonEvent(a.AbsolutePosition.X+a.AbsoluteSize.X/2,a.AbsolutePosition.Y+50,0,true,a,1)
+        game:GetService("VirtualInputManager"):SendMouseButtonEvent(a.AbsolutePosition.X+a.AbsoluteSize.X/2,a.AbsolutePosition.Y+50,0,false,a,1)
+    end
+
+    a = 0
+    --playerInfo.Position = UDim2.new(1, 0, 0, 0)
+
+
+    print("HERE")
+    while Spam do
+        if not Character and not Character:FindFirstChild("HumanoidRootPart") then
+            break
+        end
+        print("HERE", a)
+        wait()
+
+        a += 1
+
+         --print(a)
+
+        for i,v in pairs(playerInfo.body2Frame.scrollingFrame:GetChildren()) do
+            if v.Name == "playerFrame" then
+                if v:FindFirstChild("invite") then
+                    click(v.invite)
+
+                    wait(Invitedelay)
+
+                    v:Destroy()
+                end
+
+            end
+        end
+
+        wait()
+
+        click(playerInfo.refreshButton)
+
+        wait(.3)
+    end
+end)
+
+
+
+-- [[ UI Section Settings ]]
+
+TabSettings = Window:CreateTab('UI Settings', false, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
+UIFunctions = TabSettings:CreateSection('UI Settings')
+
+DestroyButton = UIFunctions:CreateButton('Destroy UI', function()
+    Library:DestroyUI()
+end)
+
+
+local TransparencySlider = UIFunctions:CreateSlider('Transparency', 0, 100, 50, Color3.fromRGB(0, 125, 255), function(Value)
+    Library:SetTransparency(Value / 100, true)
+end)
+
+
+-- [[ UI Section script ]]
+
+
+Button = Section:CreateButton('fe fling all', function()
+    loadstring(game:HttpGet("https://github.com/DigitalityScripts/roblox-scripts/raw/main/loop%20fling%20all",true))()
+end)
+
+Button = Section:CreateButton('fe kill', function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DigitalityScripts/roblox-scripts/main/Kill%20All",true))()
+end)
+
+Button = Section:CreateButton('anti fling', function()
+    loadstring(game:HttpGet("https://pastebin.com/raw/Q0Nh2SYx", true))()
+end)
+
+Button = Section:CreateButton('leg zeg', function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DigitalityScripts/roblox-scripts/main/Leg%20Resize", true))()
+end)
+
+Button = Section:CreateButton('fe bring all', function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/DigitalityScripts/roblox-scripts/main/Bring%20All", true))()
+end)
+
+Button = Section:CreateButton('fe invisible', function()
+    loadstring(game:HttpGet("https://gist.githubusercontent.com/skid123skidlol/cd0d2dce51b3f20ad1aac941da06a1a1/raw/f58b98cce7d51e53ade94e7bb460e4f24fb7e0ff/%257BFE%257D%2520Invisible%2520Tool%2520(can%2520hold%2520tools)", true))()
+end)
+
+Button = Section:CreateButton('fe chat destroy', function()
+    while true do
+        wait(1.7)
+    local args = {
+        [1] = "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻" ..
+                "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻" ..
+                "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻"..
+                "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻" ..
+                "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻" ..
+                "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻"..
+               " ⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻" ..
+                "⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻⸻",
+        [2] = "All"
+    }
+    game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+    end
+end)
+
+Button = Section:CreateButton('give tool', function()
+    for i,v in pairs (game.Players:GetChildren()) do
+        wait()
+        for i,b in pairs (v.Backpack:GetChildren()) do
+        b.Parent = game.Players.LocalPlayer.Backpack
+        end
+        end
+end)
+
+
+Button = Section:CreateButton('fe big head', function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/sysGhost-aka-BiKode/Scripts2022/main/BigHeadV3_Unpatched", true))()
+end)
+
+Button = Section:CreateButton('fe tall', function()
+    loadstring(game:HttpGet("https://pastebin.com/raw/CBqMxhLn",true))()
+end)
+
+Button = Section:CreateButton('god mod ', function()
+    loadstring(game:HttpGet("https://pastebin.com/raw/1Ks0uPNc",true))()
+end)
+
+-- [[ UI Section Credits ]]
+
+TabCredits = Window:CreateTab('Credits', false, 'rbxassetid://3926305904', Vector2.new(524, 44), Vector2.new(36, 36))
+Section = TabCredits:CreateSection('Credits')
+Paragraph = Section:CreateParagraph('Scripting [CARRY]', 'Dev [d.o.n.t]')
+Paragraph = Section:CreateParagraph('Script & Management', 'Lina [dnt.las]')
+Paragraph = Section:CreateParagraph('Webhooks & Management', 'Dev [d.o.n.t]')
+Paragraph = Section:CreateParagraph('UI Library', 'Calin [never0426]')
