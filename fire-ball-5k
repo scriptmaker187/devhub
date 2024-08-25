@@ -1,0 +1,16 @@
+while true do
+    if not toggle_state then
+        break  -- Beendet die Schleife und damit das Skript
+    end
+
+    local args = {
+        [1] = "damage",
+        [2] = {
+            ["EnemyHumanoid"] = workspace.MAP:FindFirstChild("5k_dummies").Dummy2.Humanoid
+        }
+    }
+
+    game:GetService("ReplicatedStorage").SkillsInRS.RemoteEvent:FireServer(unpack(args))
+
+    wait(1)  -- Wartezeit, um die Schleife nicht zu oft auszuführen
+end
