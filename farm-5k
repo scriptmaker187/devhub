@@ -1,33 +1,29 @@
--- Funktion zur Teleportation zum Dummy2
+-- Fonction de téléportation au Dummy2
 local function teleportToDummy()
-    -- Überprüfung, ob Dummy2 existiert
+    -- Vérification si le Dummy2 existe
     local dummy2 = workspace.MAP:FindFirstChild("5k_dummies").Dummy2
     if dummy2 then
-        -- Teleportation zu Dummy2
+        -- Téléportation au Dummy2
         game.Players.LocalPlayer.Character:SetPrimaryPartCFrame(dummy2.HumanoidRootPart.CFrame)
     else
-        -- Fehlermeldung, wenn Dummy2 nicht gefunden wird
+        -- Message d'erreur si le Dummy2 n'est pas trouvé
         print("Le Dummy2 n'existe pas.")
     end
 end
 
--- Ausführung der Teleportation zu Dummy2
+-- Exécution de la téléportation au Dummy2
 teleportToDummy()
 
--- Schleife zum Senden von Daten an den Server
+-- Boucle d'envoi de données au serveur
 while true do
-    if not toggle_state then
-        break  -- Beendet die Schleife und damit das Skript
-    end
+    wait()
 
-    -- Daten, die an den Server gesendet werden
+    -- Données à envoyer au serveur
     local args = {
         [1] = workspace.MAP:FindFirstChild("5k_dummies").Dummy2.Humanoid,
         [2] = 1
     }
 
-    -- Senden der Daten an den Server
+    -- Envoi des données au serveur
     game:GetService("ReplicatedStorage").jdskhfsIIIllliiIIIdchgdIiIIIlIlIli:FireServer(unpack(args))
-
-    wait()  -- Wartezeit zwischen den Schleifendurchläufen
 end
