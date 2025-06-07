@@ -5,7 +5,6 @@
 @import url(https://puckzxz.github.io/NotAnotherAnimeTheme/build/v3/naat.v3.css);
 
 :root {
-    --theme-background-image: url(https://imgur.com/a/aqDCDrI);
     --main-theme-color: rgb(67, 181, 129);
     --theme-transparency: rgba(0, 0, 0, 0.8);
     --home-icon-image-position: right center;
