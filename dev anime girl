@@ -1,4 +1,6 @@
 /**
+* @name Chika vs Bedrock (Transparent)
+* @author YourName
 * @updateUrl https://raw.githubusercontent.com/Xasya/theme/main/upd/chika-vs-bedrock/chica-vs-bedrock-gif.theme.css
 */
 
@@ -61,5 +63,70 @@
     --reaction-emoji-background-color: rgba(0, 0, 0, 0);
     --reaction-emoji-border-color: 1px solid transparent;
     --reaction-emoji-hover-background-color: rgba(255, 255, 255, 0.1);
-    --reaction-emoji-hover-border-color: rgba(255, 255, 255, 0.2)
+    --reaction-emoji-hover-border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ========= Transparente Fenster und UI-Elemente ========= */
+
+/* Modale Fenster */
+[class*="modal-"],
+[class*="root-"],
+[class*="layer-"] {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+}
+
+/* Einstellungsfenster */
+[class*="standardSidebarView-"] {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* Popups / Kontextmenüs */
+[class*="menu-"],
+[class*="submenu-"],
+[class*="popout-"],
+[class*="contextMenu-"] {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(6px);
+  border-radius: 10px;
+}
+
+/* Channel- oder Servereinstellungen (Layer-Overlay) */
+[class*="layerContainer-"] > [class*="layer-"]:not(:last-child) {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(5px);
+}
+
+/* Große User-Profile */
+[class*="userPopout-"],
+[class*="profilePanel-"],
+[class*="root-"] {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* Emoji- / GIF- / Sticker-Picker */
+[class*="drawerSizingWrapper-"],
+[class*="drawer-"],
+[class*="emojiPicker-"] {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+}
+
+/* Suchfenster */
+[class*="searchResultsWrap-"],
+[class*="searchResults-"],
+[class*="messagesPopoutWrap-"] {
+  background-color: rgba(0, 0, 0, 0.65) !important;
+  backdrop-filter: blur(6px);
+}
+
+/* Kontext-Buttons bei Nachrichten */
+[class*="buttonContainer-"] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(3px);
+  border-radius: 8px;
 }
